@@ -1,0 +1,428 @@
+
+#include "../all.hpp"
+
+template<typename Typ>
+__global__ void wall_functionc(Typ *items, Typ *delX, Typ *delY, int x, int y, int z, int wall_number, int *wall, Typ *velx, Typ *vely, Typ *velz, Typ *Fx, Typ *Fy, Typ *rho, Typ *tau, int pri, int dir){
+    int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id_rho<wall_number ){ 
+        int id=wall[id_rho] ;
+        Typ volume = delX[id]*delY[id]*items[IDX_dz] ;
+        Typ abs_u = sqrtf(velx[id]*velx[id] + vely[id]*vely[id] + velz[id]*velz[id]) ;
+        Typ eta= abs_u*powf(10,-7) + powf(10,-20), nu = items[IDX_c]*items[IDX_c]*items[IDX_dt]/3.0*(tau[id]-0.5) ;
+        Typ utau, epsilon, kap=0.41, Beta=5.5, tmp ;
+        Typ y_dist = x*delX[id]/2.0 + y*delY[id]/2.0 + z*items[IDX_dz]/2.0 ;
+        Typ area = volume/(y_dist*2.0) ; 
+        utau=abs_u*0.11 ;
+        // utau= sqrtf(abs_u*items[IDX_nu]/y_dist) ;
+        for(int i=0;i<15;i++){
+            tmp = kap*abs_u/(utau+eta) ;
+            // tmp = fminf(8,tmp) ; // exp(tmp)のオーバーフローを防ぐため最大値を10とする
+            /* calculate changing value */
+            epsilon=
+            -(
+                (abs_u/(utau+eta) - y_dist*utau/nu + exp(-kap*Beta)*( exp(tmp) - 1.0 - tmp - powf(tmp,2)/2.0 - powf(tmp,3)/6.0 )) /  // function of spalding
+                (-y_dist/nu - abs_u/(powf(utau,2)+eta) + exp(-kap*Beta)*tmp/(utau+eta)*( -exp(tmp) + 1.0 + tmp + powf(tmp,2)/(2.0) ) + eta)  // first derivative of above function
+            ) ;
+            utau+=epsilon ;    
+        }
+        Fx[id] += -velx[id]/(abs_u+eta)*powf(utau,2.0)* rho[id] * (area/volume) ;
+        Fy[id] += -vely[id]/(abs_u+eta)*powf(utau,2.0)* rho[id] * (area/volume) ;
+        /*if(id==101417 && pri==0){
+            if(dir==3){printf("/////////////////////////////////////////////////\n");}
+            printf("direction %d utau = %f, y+ = %f, u+ = %f\n",dir, utau, y_dist*utau/nu, abs_u/(utau+eta)) ;
+            printf("v_z= %f v_y= %f Fz= %f, Fy= %f \n",velx[id], vely[id], Fx[id], Fy[id]) ;
+        } // */
+    }
+}
+
+template<typename Typ>
+__global__ void set_wall_boundary1(Typ *items, int wall_number, int *wall, Typ *f, Typ *scolar, Typ *velx, Typ *vely, Typ *velz){
+    int id = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id<wall_number ){ 
+        int id_rho = wall[id] ;
+        int id_f = id_rho * (int)items[IDX_Q] ;
+        Typ tmp ; int k ;
+        for(k=0;k<items[IDX_Q];k++){
+            tmp = (items[IDX_cx(k)]*velx[id_rho]  + items[IDX_cy(k)]*vely[id_rho] +  items[IDX_cz(k)]*velz[id_rho])/(items[IDX_c]*items[IDX_c]) ;
+            f [id_f+k]  = items[IDX_w(k)] * (scolar[id_rho] + 3.0*tmp + 4.5*tmp*tmp-1.5*(velx[id_rho]*velx[id_rho]+vely[id_rho]*vely[id_rho]+velz[id_rho]*velz[id_rho])/(items[IDX_c]*items[IDX_c])) ;          
+        }
+    }
+} // set wall boundary condition
+template<typename Typ>
+__global__ void set_velocity1(Typ *items, int wall_number, int *wall, Typ *velx, Typ velocity){
+    int id = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id<wall_number ){ 
+        int id_rho = wall[id] ;
+        velx[id_rho] = velocity ;
+    }
+}
+template<typename Typ>
+__global__ void set_scalar(Typ *items, int *neib, int direction, int wall_number, int *wall, Typ *scalar){
+    int id = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id<wall_number ){ 
+        int id_rho = wall[id] ; int id_f = id_rho * (int)items[IDX_Q] ;
+        scalar[id_rho] = scalar[neib[id_f + direction]] ; // set scalar value from neighbor
+    }
+}
+
+template<typename Typ>
+void set_wall_cylinder(const vector<Typ>& items, const vector<int>& neib, vector<Typ>& posx, vector<Typ>& posy, vector<int>& wall1, vector<int>& wall2, vector<int>& wall3, vector<int>& wall4, vector<int>& wall5, vector<int>& wall6){
+    int i ;
+    int dir1=1, dir2=2, dir3=3, dir4=4 ;
+    for(i=0;i<items[IDX_num_calc];i++){
+        if(0.3<posx[i] && 0.7>posx[i] && 0.3<posy[i] && 0.7>posy[i]){
+            if(neib[i*(int)items[IDX_Q]+dir1]>=(int)items[IDX_num_calc]){ wall1.push_back(i) ;}
+            if(neib[i*(int)items[IDX_Q]+dir2]>=(int)items[IDX_num_calc]){ wall2.push_back(i) ;}
+            if(neib[i*(int)items[IDX_Q]+dir3]>=(int)items[IDX_num_calc]){ wall3.push_back(i) ;}
+            if(neib[i*(int)items[IDX_Q]+dir4]>=(int)items[IDX_num_calc]){ wall4.push_back(i) ;}
+        }
+    }
+}
+template<typename Typ>
+void out_C_D(const vector<Typ>& C_D, const vector<Typ>& C_time){
+    string filename = "C_D.csv" ;
+    ofstream ofs(filename) ;
+    if(!ofs){cout<<"cannot open file "<<filename<<endl; exit(1);}
+    ofs<<"C_D,C_time"<<endl ;
+    for(int i=0;i<C_D.size();i++){
+        ofs<<C_D[i]<<","<<C_time[i]<<endl ;
+    }
+    ofs.close() ;
+} // output C_D
+
+int main (void){
+
+    int i, j, l, k ;
+    int *cx, *cy, *cz ;
+    vector<int> neib, nextK, nextB, divx, divy ; // devided x, y
+    vector<float> f, g, h, Fk, vel_x, vel_y, vel_z, rho, sal, phi, pressure, Fx, Fy, Fz, posx, posy, posz, delX, delY ;
+    vector<float> tau, taus ;
+    vector<float> item ;
+    Items items ; input_items(items,"./input/initial") ; 
+    items.PFthick = 3.5*items.dx ; items.sigma = 0.072 *0;
+    string Boussinesq_approxi = "on" ; 
+    bool Boussi_flag = (strcmp(Boussinesq_approxi.c_str(),"on") ==0) ;
+    items.setc(9) ; 
+    vector<float> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
+    M_inv((int)pow(items.num_velocity,2)), S(items.num_velocity) ;
+    set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
+    float Re_number = 40.0, Diameter=0.06,  vel_U = 0.015 ; int wall_b_number = 3 ;
+    cout<<" input Re_number to " ;
+    cin >> Re_number ;
+    items.nu = Diameter*vel_U/Re_number ; 
+    if(items.nu<pow(10,-6)){items.nu=pow(10,-6) ; vel_U = Re_number*items.nu/Diameter ;} 
+    cout<< "nu = "<<items.nu<<endl ;
+    // vel_U = Re_number*items.nu/Diameter ; // set velocity from Re_number
+    cout<<"Re_number = "<<Re_number<<" nu = "<<items.nu<<" vel_U = "<<vel_U<<endl ;
+    vector<float> C_D, C_time ;
+
+    ////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
+    items.save_interval = 1.0/items.dt ; items.total_count= 200/items.dt ;
+    items.save_interval = items.total_count/200 ;
+    // items.total_count=2 ; items.save_interval=1 ;
+    ////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
+        
+    cx = new int[items.num_velocity] ; cy= new int[items.num_velocity] ; cz = new int[items.num_velocity] ; 
+    for(k=0;k<items.num_velocity;k++){
+        cx[k]=items.cx[k]/items.c ; cy[k]=items.cy[k]/items.c ; cz[k]=items.cz[k]/items.c ;
+    }
+
+    // divide x, y direction
+    for(i=0;i<items.nx;i++){
+        float x = (i+0.5)*items.dx*items.ratiox ;
+        if( 0.2<x && 0.9>x ){    // not uniform
+        // if( 0.24<x && 0.60>x &&i<0){ // uniform
+            if( 0.22<x && 0.8>x){
+                divx.push_back(8) ; continue ;
+            }
+            divx.push_back(8) ; continue ;
+        }
+        else{divx.push_back(8);}
+    } // */
+
+    // divide x, y direction
+    for(i=0;i<items.ny;i++){
+        divy.push_back(1);
+    } // */
+
+
+    // set wall infomation
+    vector<int> lnum ;
+    items.num_calc=0 ;
+    for(i=0;i<items.nx;i++){
+        for(int divi=0;divi<divx[i];divi++){
+            for(j=0;j<items.ny;j++){
+                for(int divj=0;divj<divy[j];divj++){
+                    for(l=0;l<items.nz;l++){
+                        float x = ( i + (2.0*divi+1.0)/(2.0*divx[i]) )*items.dx*items.ratiox ;
+                        float y = ( j + (2.0*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ;
+                        float z = ( l + 0.5 )*items.dx ;
+                        if(0+ pow(x-0.42,2) + pow(z-0.42,2) > pow(0.03,2) ){
+                            lnum.push_back(items.num_calc) ;
+                            items.num_calc+=1 ;
+                        }
+                        else{lnum.push_back(-1) ; }
+                    }
+                }
+            }
+        }
+    }    
+
+    printf("set initial condition \n") ;
+    float rhoL=1, rhoH=1000.0, muL=1.*pow(10,-5), muH=1.016*pow(10,-3) ;
+    { int int_tmp=0 ;
+    for(i=0;i<items.nx;i++){
+        for(int divi=0;divi<divx[i];divi++){
+            for(j=0;j<items.ny;j++){
+                for(int divj=0;divj<divy[j];divj++){
+                    for(l=0;l<items.nz;l++){
+                        if(lnum[int_tmp]<0){ int_tmp+=1 ; continue ;}
+                        float local_x = (i + (2*divi+1.0)/(2.0*divx[i]) )*items.dx*items.ratiox ;
+                        float local_z = (0.5 + l)*items.dx ;
+                        posx.push_back(local_x) ; posz.push_back(local_z) ;
+                        posy.push_back( (j + (2*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ) ;
+                        delX.push_back( items.dx*items.ratiox/divx[i]) ; delY.push_back( items.dx*items.ratioy/divy[j]) ;
+                        sal.push_back(0) ; phi.push_back(1) ;           
+                        // sal[sal.size()-1] = 12.13-12.13*tanh((local_z-(h2+(local_x-3)*slope_eta0))/thicness) ; // 6m 
+                        // phi[phi.size()-1] = 0.5 - 0.5*tanh( (posz[posz.size()-1] - (d0+eta) )/items.PFthick*2.0 ) ; // 
+                        rho.push_back(rhoL+phi[phi.size()-1]*(rhoH-rhoL) + sal[sal.size()-1]*0.824493) ;
+
+                        // pressure.push_back(9.81*(items.dx*items.nz-z) *3.0/(pow(items.c,2))) ; // 静水圧を仮定したp*の分布 
+                        pressure.push_back(0) ;
+                        vel_x.push_back(vel_U*1.0) ; vel_y.push_back(0.0) ; vel_z.push_back(0.0) ; 
+                        Fx.push_back(0) ; Fy.push_back(0) ; Fz.push_back(0) ;
+                        // tau.push_back( 1.0*3.0*(muL+phi[phi.size()-1]*(muH-muL))/rho[rho.size()-1]/pow(items.c,2)/items.dt+0.5) ;
+                        tau.push_back( items.nu*3.0/(pow(items.c,2)*items.dt) + 0.5) ;
+                        taus.push_back(1.4*3.0*pow(10,-9)/pow(items.c,2)/items.dt+0.5) ;
+                        for(k=0;k<items.num_velocity;k++){
+                            float tmp = (vel_x[vel_x.size()-1]*items.cx[k] + vel_y[vel_x.size()-1]*items.cy[k] + vel_z[vel_x.size()-1]*items.cz[k])/pow(items.c,2) ;
+                            Fk.push_back(0) ; f.push_back(0) ;
+                            g.push_back(items.weight[k]*sal[sal.size()-1]*(1 + 3*tmp + 4.5*tmp*tmp - 1.5*(pow(vel_x[vel_x.size()-1],2)+pow(vel_y[vel_x.size()-1],2)+pow(vel_z[vel_x.size()-1],2))/pow(items.c,2) )) ;
+                        }
+                        int_tmp+= 1 ;
+                    }
+                }
+            }
+        }
+    } }
+    items.nx=0 ; items.ny=0 ; 
+    for(i=0;i<divx.size();i++){items.nx+=divx[i];} for(j=0;j<divy.size();j++){items.ny+=divy[j];}
+    cout<<"items nx ="<<items.nx<<" items ny="<<items.ny<<endl<<endl;
+    cout<<"number of calculation lattice is "<<items.num_calc<<" wall lattice is "<<rho.size()-items.num_calc<<endl; cout<<""<<endl;
+    cout<<"lnum="<<lnum.size()<<endl;
+    for(i=0;i<items.nx;i++){for(j=0;j<items.ny;j++){for(l=0;l<items.nz;l++){
+        if(lnum[i*items.ny*items.nz+j*items.nz+l]<0){
+            continue ;
+        }
+        for(k=0;k<items.num_velocity;k++){
+            if(i+cx[k]>=0 && i+cx[k]<items.nx && j+cy[k]>=0 && j+cy[k]<items.ny && l+cz[k]>=0 && l+cz[k]<items.nz){
+                neib.push_back(lnum[i*items.ny*items.nz+j*items.nz+l + cx[k]*items.ny*items.nz + cy[k]*items.nz + cz[k]]) ;
+            }
+            else{ neib.push_back(-1) ; }
+        }
+    }}}
+
+    /* set neighbor wall lattice */
+    printf("set neighbor wall lattice \n") ;
+    set_neibghor_wall(items,lnum,divx,divy,neib,f,g,Fk,pressure,rho,phi,posx,posy,posz,delX,delY,vel_x,vel_y,vel_z) ;
+    // hydrostatic_pressure(items,Boussi_flag,neib,pressure,rho,f,posz) ;
+    for(i=0;i<items.num_calc;i++){
+        for(k=0;k<items.num_velocity;k++){
+            float tmp = (vel_x[i]*items.cx[k] + vel_y[i]*items.cy[k] + vel_z[i]*items.cz[k])/pow(items.c,2) ;
+            f[i*items.num_velocity+k] = items.weight[k]*(pressure[i]+3.0*tmp+4.5*pow(tmp,2)-1.5*(pow(vel_x[i],2)+pow(vel_y[i],2)+pow(vel_z[i],2))/pow(items.c,2)) ;
+            g[i*items.num_velocity+k] = items.weight[k]*phi[i]*(1.0+3.0*tmp+4.5*pow(tmp,2)-1.5*(pow(vel_x[i],2)+pow(vel_y[i],2)+pow(vel_z[i],2))/pow(items.c,2)) ;
+        }
+    }
+
+    // index show in spreadsheet
+    // https://docs.google.com/spreadsheets/d/1wy2RkS1ECD7LtZCgyQAtm0fKckvEZmfZUeOMNmJwrgk/edit?gid=0#gid=0
+    item.push_back(items.dx) ; item.push_back(items.dt) ; item.push_back(items.c) ; 
+    item.push_back(items.nx) ; item.push_back(items.ny) ; item.push_back(items.nz) ; item.push_back(items.num_velocity) ; // 0~6
+    item.push_back(items.ratiox) ; item.push_back(items.ratioy) ; item.push_back(items.PFthick) ; // 7~9
+    item.push_back(items.num_calc) ; item.push_back(rho.size()-items.num_calc) ;
+    item.push_back(items.nu) ; item.push_back(pow(10,-9)) ; item.push_back(items.sigma) ;
+    item.push_back(items.tau) ; item.push_back(items.taus) ;
+    // wall function用の変数を準備
+    vector<int> wall1, wall2, wall3, wall4, wall5, wall6 ;
+    set_walln(item, neib, wall1, wall2, wall3, wall4, wall5, wall6) ;
+    item.push_back(wall1.size()) ; item.push_back(wall2.size()) ; item.push_back(wall3.size()) ; 
+    item.push_back(wall4.size()) ; item.push_back(wall5.size()) ; item.push_back(wall6.size()) ;  
+    vector<int> wall1c, wall2c, wall3c, wall4c, wall5c, wall6c ; // wall of cylinder
+    set_wall_cylinder(item, neib, posx, posz, wall1c, wall2c, wall3c, wall4c, wall5c, wall6c) ;
+    vector<int> wallin, wallout ;
+    for(j=0;j<items.ny*items.nz*wall_b_number;j++){
+        wallin.push_back(j) ; wallout.push_back(items.num_calc-items.ny*items.nz*wall_b_number+j) ;
+    }
+
+    for(i=0;i<items.num_velocity;i++){item.push_back(items.weight[i]) ;}
+    for(i=0;i<items.num_velocity;i++){item.push_back(items.cx[i]) ;}
+    for(i=0;i<items.num_velocity;i++){item.push_back(items.cy[i]) ;}
+    for(i=0;i<items.num_velocity;i++){item.push_back(items.cz[i]) ;}
+
+    if     (items.num_velocity==9 ){set_bound2D(item, items.num_calc, neib, nextK, nextB) ;printf("call set_bound2D\n") ;}
+    else if(items.num_velocity==27){set_bound3D(item, items.num_calc, neib, nextK, nextB) ;printf("call set_bound3D\n") ;}
+
+    printf("allocate device memory \n");
+    int *d_neib, *d_nextB, *d_nextK ;
+    float *d_f, *d_ftmp, *d_fout, *d_feq, *d_g ;
+    float *d_posx, *d_posy, *d_posz, *d_delX, *d_delY ;
+    float *d_rho, *d_u, *d_v, *d_w, *d_sal, *d_phi, *d_pressure, *d_tau, *d_taus ;
+    float *d_phiold, *d_uold, *d_vold, *d_wold ;
+    float *d_Fk, *d_Fx, *d_Fy, *d_Fz ;
+    float *d_items, *d_M, *d_Minv, *d_S, *d_MM; 
+    int *d_wall1, *d_wall2, *d_wall3, *d_wall4, *d_wall5, *d_wall6 ;
+    int *d_wall1c, *d_wall2c, *d_wall3c, *d_wall4c, *d_wall5c, *d_wall6c ;
+    int *d_wallin, *d_wallout ;
+    cuMallocCopy(&d_neib, neib) ; cuMallocCopy(&d_nextB, nextB) ; cuMallocCopy(&d_nextK,nextK) ;
+    cuMallocCopy(&d_M, M)        ; cuMallocCopy(&d_MM, MM) ; 
+    cuMallocCopy(&d_Minv, M_inv) ; cuMallocCopy(&d_S, S) ; 
+    cuMallocCopy(&d_items,item) ;
+    cuMallocCopy(&d_f, f) ;  cuMallocCopy(&d_ftmp, f) ; cuMallocCopy(&d_fout, f) ; cuMallocCopy(&d_feq, Fk) ; cuMallocCopy(&d_Fk, Fk) ;
+    cuMallocCopy(&d_g, g) ;  
+    cuMallocCopy(&d_pressure,pressure) ; cuMallocCopy(&d_sal,sal) ; cuMallocCopy(&d_phi,phi) ; 
+    cuMallocCopy(&d_tau,tau) ; cuMallocCopy(&d_taus,taus) ;    
+    cuMallocCopy(&d_Fx,Fx)             ; cuMallocCopy(&d_Fy,Fy)   ; cuMallocCopy(&d_Fz,Fz) ;
+    cuMallocCopy(&d_rho,rho) ; cuMallocCopy(&d_posx,posx) ; cuMallocCopy(&d_posy,posy) ; cuMallocCopy(&d_posz,posz) ;
+    cuMallocCopy(&d_delX, delX) ; cuMallocCopy(&d_delY,delY) ;
+    cuMallocCopy(&d_u,vel_x) ; cuMallocCopy(&d_v,vel_y)   ; cuMallocCopy(&d_w,vel_z) ;
+    cuMallocCopy(&d_phiold,phi) ; cuMallocCopy(&d_uold,vel_x) ; cuMallocCopy(&d_vold,vel_y) ; cuMallocCopy(&d_wold,vel_z) ;
+    cuMallocCopy(&d_wall1, wall1) ; cuMallocCopy(&d_wall2, wall2) ; cuMallocCopy(&d_wall3, wall3) ;
+    cuMallocCopy(&d_wall4, wall4) ; cuMallocCopy(&d_wall5, wall5) ; cuMallocCopy(&d_wall6, wall6) ;
+    
+    cuMallocCopy(&d_wall1c, wall1c) ; cuMallocCopy(&d_wall2c, wall2c) ; cuMallocCopy(&d_wall3c, wall3c) ;
+    cuMallocCopy(&d_wall4c, wall4c) ; cuMallocCopy(&d_wall5c, wall5c) ; cuMallocCopy(&d_wall6c, wall6c) ;
+
+    cuMallocCopy(&d_wallin, wallin) ; cuMallocCopy(&d_wallout, wallout) ;
+    cout<<" wall1c size = "<<wall1c.size()<<" wall2c size = "<<wall2c.size()<<" wall3c size = "<<wall3c.size()<<endl ;
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    output(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,0,items.save_interval) ;
+    printf("start main calculation \n");
+    int blockSize = 64;
+    int numBlocks = (rho.size() + blockSize - 1) / blockSize ;     
+    auto start=chrono::high_resolution_clock::now() ;
+    for(int timestep=1 ; timestep<items.total_count+1 ; timestep++){
+        // velocity field
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; // */
+        /*wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1c.size(), d_wall1c, d_w, d_v, d_u, d_Fz, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),1) ;
+        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3c.size(), d_wall3c, d_w, d_v, d_u, d_Fz, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),3) ;
+        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall2c.size(), d_wall2c, d_w, d_u, d_v, d_Fz, d_Fx, d_rho, d_tau, timestep%(items.save_interval/1),2) ;
+        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall4c.size(), d_wall4c, d_w, d_u, d_v, d_Fz, d_Fx, d_rho, d_tau, timestep%(items.save_interval/1),4) ; // */
+        equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
+        Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
+        col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
+        IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
+        set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
+        set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
+
+        // salinity 
+        /*col_g_reg     <float> <<<numBlocks, blockSize>>>(d_items, d_taus, d_g, d_ftmp, d_feq, d_sal, d_u, d_v, d_w) ;
+        IP_process(d_items,numBlocks,blockSize,d_neib,d_g,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // */
+        // Phase Field
+        /*col_PF        <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_taus, d_g, d_ftmp, d_feq, d_phi, d_u, d_v, d_w, d_phiold, d_uold, d_vold, d_wold, d_posx, d_posy, d_posz) ;
+        IP_process(d_items,numBlocks,blockSize,d_neib,d_g,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // */
+        // set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallin , d_g, d_phi, d_u, d_v, d_w) ;
+        // set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallout, d_g, d_phi, d_u, d_v, d_w) ;
+        
+        // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_sal) ;
+        // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_phi) ;
+        update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_u, d_v, d_w) ; 
+        // LES           <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
+        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
+        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
+        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_u) ;  set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_v) ; set_wall_rho<float><<<numBlocks, blockSize>>>(d_items, d_neib, d_w) ;
+        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_u, vel_U) ;
+        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_w, 0.00) ;
+        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_v, 0.00) ;
+        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_u, 0.00) ;
+        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_w, 0.00) ;
+        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_v, 0.00) ;
+
+        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallin , d_phi, 1.00) ;
+        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallout, d_phi, 1.00) ;
+        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_pressure, 0.0) ;
+        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_pressure, 0.0) ;
+        // set_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_neib, 3, items.ny*items.nz, d_wallout, d_pressure) ;
+        // set_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_neib, 1, items.ny*items.nz, d_wallin , d_pressure) ;
+        set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
+        set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
+
+
+        // CUDAのエラーをcheck
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            std::cerr << "CUDA error: " << cudaGetErrorString(err) << std::endl;
+            return 1;
+        } // */
+        if(timestep%items.save_interval==0){
+            cudaMemcpy(pressure.data(), d_pressure , pressure.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(vel_x.data(), d_u    ,  vel_x.size() * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(vel_y.data(), d_v    ,  vel_y.size() * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(vel_z.data(), d_w    ,  vel_z.size() * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Fx.data()   , d_Fx   ,  Fx.size()    * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Fy.data()   , d_Fy   ,  Fy.size()    * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Fz.data()   , d_Fz   ,  Fz.size()    * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(sal.data()  , d_sal  ,  sal.size()   * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(phi.data()  , d_phi  ,  phi.size()   * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(rho.data()  , d_rho  ,  rho.size()   * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(tau.data()  , d_tau  ,  tau.size()   * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            printf("loop%02d  time=%f\n",timestep/items.save_interval,timestep*items.dt) ;
+            output<float>(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,timestep,items.save_interval) ;
+            if(isnan(vel_x[items.ny*items.nz*5])!=0){
+                cout<<"######################################"<<endl<<"Not a number is detected !"
+                <<endl<<"######################################"<<endl; break;} // check NAN
+            /*cudaMemcpy(f.data()  , d_f, f.size()   * sizeof(float),cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Fk.data()  , d_Fk, Fk.size()   * sizeof(float),cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(g.data()  , d_f, g.size()   * sizeof(float),cudaMemcpyDeviceToHost) ;
+            // cudaMemcpy(rho.data(), d_rho , rho.size() * sizeof(float),cudaMemcpyDeviceToHost) ;
+            i=600 ; j=700 ; 
+            cout<<"clac rho="<<phi[i] <<" wall rho="<<phi[j] << endl;
+            cout << "i="<<i <<" "<<neib[i*items.num_velocity]<< " neib[3]="<<neib[i*items.num_velocity+3]<< " calcid="<<neib[j*items.num_velocity]<<endl;
+            cout<<" vel[600]="<<vel_y[i]<<" vel[700]="<<vel_y[j]<<endl;
+            for(k=0;k<items.num_velocity;k++){
+                // cout<<"i="<<i<<" g["<<k<<"]="<<g[i*items.num_velocity+k]<<" j="<<j<<" g="<<g[j*items.num_velocity+k]<< endl;
+                // cout<<"i="<<j<<" g["<<k<<"]="<<g[j*items.num_velocity+k]<< endl;
+                // cout << "i="<<i <<" "<<neib[i*items.num_velocity]<< " neib["<<k<<"]="<<neib[i*items.num_velocity+k]<<endl;
+                cout << "i="<<i <<" "<<"nextB["<<k<<"]="<<nextB[i*items.num_velocity+k]<<" nextK["<<k<<"]="<<nextK[i*items.num_velocity+k]<<endl;
+                // cout<<neib[i*items.num_velocity+k]<<endl;
+            } // */
+            double sum_press=0 ;
+            for(i=0;i<wall1c.size();i++){
+                sum_press += (pressure[wall1c[i]])*pow(items.c,2)*1000.0/3.0 * items.dx*items.dx
+                * cos( atan2(posz[wall1c[i]]-7.0*Diameter,7.0*Diameter-posx[wall1c[i]]) ) ;
+                sum_press += (pressure[wall3c[i]])*pow(items.c,2)*1000.0/3.0 * items.dx*items.dx
+                * cos( atan2(posz[wall3c[i]]-7.0*Diameter,7.0*Diameter-posx[wall3c[i]]) ) ;
+            }
+            for(i=0;i<wall2c.size();i++){
+                sum_press -= (Fx[wall2c[i]]+Fx[wall4c[i]])*pow(items.dx,3) ;
+            }
+            double F_D = sum_press/(Diameter*items.dx) ;
+            cout<<"C_D = "<<F_D/(500.0*pow(vel_U,2))<<" F_D= "<<F_D<<" Re= "<<vel_U*Diameter/items.nu<<endl; // */
+            C_D.push_back(F_D/(500.0*pow(vel_U,2))) ; C_time.push_back(timestep*items.dt) ;
+        }
+        resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
+    }
+
+    out_C_D(C_D, C_time) ;
+    cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<items.tau<<endl;
+    cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
+    cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;
+    cout<<"number of calculation lattice is "<<items.num_calc<<" wall lattice is "<<rho.size()-items.num_calc<<endl; cout<<""<<endl;
+    auto end=chrono::high_resolution_clock::now() ;
+    chrono::duration<float> duration=end-start ;
+    cout<<endl;
+    cout<<" dz="<<items.dx<<"m, rx="<<items.ratiox<<", ry="<<items.ratioy<<
+    ", nx="<<items.nx<<", ny="<<items.ny<<", nz="<<items.nz<<", dt="<<items.dt<<endl;
+    cout<<" vel_U= "<<vel_U<<" Diameter= "<<Diameter<< " nu= "<<items.nu<<" Re= "<<vel_U*Diameter/items.nu<<endl;
+
+    cout<<"###############################################"<<endl;
+    cout<<"compute time = " << duration.count() <<endl;
+    cout<<"###############################################"<<endl;
+
+}
