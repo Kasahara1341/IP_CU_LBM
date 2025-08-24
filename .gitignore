@@ -53,13 +53,12 @@ dkms.conf
 
 # result of simulation
 **/*.csv
-*/data*
 */data/*.csv
 */data/*.vtk
 */figure/*.png
 */make_result/*.png
 */make_result/*.csv
-*/vtu*/*
+*/vtu*/*.v*
 */a.out
 *.gif
 library/*.o
