@@ -18,6 +18,8 @@ xz:
 	# python3 make_figure.py
 # 	python3 make_VTK.py
 # 	python3 make_IB.py	
+down:
+	cp -rf vtu_EF /mnt/c/Users/tsukk/OneDrive/ドキュメント
 precomp:
 	-@rm ../library/*.o
 comp: $(OBJ_FILES)
