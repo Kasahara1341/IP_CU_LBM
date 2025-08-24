@@ -13,7 +13,7 @@ OBJ_FILES := $(patsubst $(SRC_DIR)/%.cu, $(OBJ_DIR)/%.o, $(SRC_FILES))
 low:
 	-@rm lib.a a.out
 	ar r lib.a ../library/*
-	nvcc Karman_vortex2D.cu lib.a -arch=sm_$(arch)
+	nvcc Karman_vortex2D.cu lib.a -arch=sm_$(arch) -rdc=true
 	./a.out
 	# python3 make_figure.py
 	python3 C_D.py
@@ -21,7 +21,7 @@ low:
 xz:
 	-@rm lib.a a.out
 	ar r lib.a ../library/*
-	nvcc Karman_vortexxz.cu lib.a -arch=sm_$(arch)
+	nvcc Karman_vortexxz.cu lib.a -arch=sm_$(arch) -rdc=true
 	./a.out
 	# python3 make_figure.py
 	python3 C_D.py

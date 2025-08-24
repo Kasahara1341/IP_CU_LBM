@@ -10,18 +10,10 @@ OBJ_DIR = ../library
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cu)
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cu, $(OBJ_DIR)/%.o, $(SRC_FILES))
 
-low:
-	-@rm lib.a a.out
-	ar r lib.a ../library/*
-	nvcc EllipticalFall.cu lib.a -arch=sm_$(arch)
-	./a.out
-	# python3 make_figure.py
-	python3 make_VTK.py
-	python3 make_IB.py
 xz:
 	-@rm lib.a a.out
 	ar r lib.a ../library/*
-	nvcc EllipticalFallxz.cu lib.a -arch=sm_$(arch)
+	nvcc EllipticalFallxz.cu lib.a  -arch=sm_$(arch) -rdc=true
 	./a.out
 	# python3 make_figure.py
 # 	python3 make_VTK.py
