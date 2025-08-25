@@ -48,7 +48,7 @@ int main (void){
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.dt/=1.0 ;
-    items.save_interval = 1.0/items.dt ; items.total_count= 0.75/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 0.70/items.dt ;
     items.save_interval = items.total_count/20 ;
     // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
