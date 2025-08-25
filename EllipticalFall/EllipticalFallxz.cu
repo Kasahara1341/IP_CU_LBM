@@ -48,8 +48,8 @@ int main (void){
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.dt/=1.0 ;
-    items.save_interval = 1.0/items.dt ; items.total_count= 0.70/items.dt ;
-    items.save_interval = items.total_count/20 ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 0.595/items.dt ;
+    items.save_interval = items.total_count/50 ;
     // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
@@ -197,8 +197,9 @@ int main (void){
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
     densB.push_back(1.5*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
-    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0 ) ; 
-    IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ;
 
     cout<<"dens="<<densB[0]<<" massB="<<massB[0]<<endl;
 
@@ -346,7 +347,7 @@ int main (void){
         set_f_ftmp<float>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;
         for(i=0;i<1;i++){
             // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
-            SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
+            // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
