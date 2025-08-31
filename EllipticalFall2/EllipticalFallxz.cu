@@ -1,41 +1,27 @@
 
 #include "../all.hpp"
 
-__device__ float profile_s22(float limit_lenght, float distance){
-    float r = limit_lenght/distance ;
-    float result = (0 * (r<0.95)) + (0.5*(sin(3.14159*(r*5 - 5.0)) + 1.0) * (0.95<=r && r<=1.05)) + (1.0 * (1.05<r)) ;
-    return result ;
-}
-__global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS, float *posB, float *f, float *tau, float *posx, float *posy, float *posz, float *velx, float *vely, float *velz, float *velB){
-    // smoothed-profile method
+template<typename Typ>
+__global__ void set_f_ftmp(Typ *items, Typ *f, Typ *ftmp){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
-    int id_f = id_rho * (int)items[IDX_Q] ;
-    if(id_rho<items[IDX_num_calc]){
-        float X1, Y1, Z1 ;
-        X1 = quaS[0]*(posx[id_rho]-posB[0]) + quaS[3]*(posy[id_rho]-posB[1]) + quaS[6]*(posz[id_rho]-posB[2]) ;
-        Y1 = quaS[1]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[7]*(posz[id_rho]-posB[2]) ;
-        Z1 = quaS[2]*(posx[id_rho]-posB[0]) + quaS[5]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
-        float distance = powf(X1/Rada,2) + powf(Y1/Rada,2) + powf(Z1/Radb,2), fx, fy, fz ; 
-        fx = profile_s22(1.0,distance) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
-        fy = profile_s22(1.0,distance) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
-        fz = profile_s22(1.0,distance) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
-        for(int k =0;k<items[IDX_Q];k++){
-            f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
-            *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
+    if(id_rho<items[IDX_num_calc]){ 
+        int id_f = id_rho * (int)items[IDX_Q] ;
+        for(int k=0;k<items[IDX_Q];k++){
+            ftmp[id_f+k] = f[id_f+k] ;
         }
     }
 }
 template<typename Typ>
-void out_C_D(const vector<Typ>& C_D, const vector<Typ>& C_time){
-    string filename = "C_D.csv" ;
+void out_x_H(const vector<Typ>& x_H, const vector<Typ>& C_time){
+    string filename = "x_H.csv" ;
     ofstream ofs(filename) ;
     if(!ofs){cout<<"cannot open file "<<filename<<endl; exit(1);}
-    ofs<<"C_D,C_time"<<endl ;
-    for(int i=0;i<C_D.size();i++){
-        ofs<<C_D[i]<<","<<C_time[i]<<endl ;
+    ofs<<"x_H,y_H"<<endl ;
+    for(int i=0;i<x_H.size();i++){
+        ofs<<x_H[i]<<","<<C_time[i]<<endl ;
     }
     ofs.close() ;
-} // output C_D
+} // output x_H
 
 int main (void){
 
@@ -46,6 +32,7 @@ int main (void){
     vector<float> tau, taus ;
     vector<float> item ;
     Items items ; input_items(items,"./input/initial") ; 
+    {float ny=items.ny; items.nz=items.ny ; items.ny=1 ; items.num_velocity=9;}
     items.PFthick = 3.5*items.dx ; items.sigma = 0.072 *0;
     string Boussinesq_approxi = "on" ; 
     bool Boussi_flag = (strcmp(Boussinesq_approxi.c_str(),"on") ==0) ;
@@ -53,17 +40,22 @@ int main (void){
     vector<float> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
     M_inv((int)pow(items.num_velocity,2)), S(items.num_velocity) ;
     set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
-    vector<float> vecx_H, vecy_H, vec_velwx, vec_time ;
+    vector<float> vecx_H, vecy_H ;
 
-    items.nu*=1000 ;
+    float H_axis = 0.004 , 
+    a_axis = H_axis/8.0 ,b_axis = H_axis/16.0 ;
+    items.dx = H_axis/items.nz ; items.dt = items.dx ;
+
+    // items.nu=0.1364/3.0*items.dt*pow(items.c,2) ;
+    // items.nu = 1.50313*pow(10,-6) ;
 
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 2.05/items.dt ;
-    items.save_interval = items.total_count/20 ;
-    // items.total_count=2 ; items.save_interval=2 ;
-    cout<<"total count= "<<items.total_count<<" save_interval= "<<items.save_interval<<endl;
+    items.dt/=1.0 ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 0.6/items.dt ;
+    items.save_interval = items.total_count/50 ;
+    // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
         
@@ -175,6 +167,7 @@ int main (void){
             else{ neib.push_back(-1) ; }
         }
     }}}
+
     /* set neighbor wall lattice */
     printf("set neighbor wall lattice \n") ;
     set_neibghor_wall(items,lnum,divx,divy,neib,f,g,Fk,pressure,rho,phi,posx,posy,posz,delX,delY,vel_x,vel_y,vel_z) ;
@@ -189,61 +182,69 @@ int main (void){
         }
     }
 
-
-    // set IBM points //
+    // set IBM points
     vector<float> oposw ;
-    float H_axis = items.nz*items.dx , Radius ;
-    Radius = 0.01580/2.0 ;
 
     // read sphere points from csv file
-    int number_of_division = 3 ;
     {char sphere_file[100] ;
-    sprintf(sphere_file,"sphere_points_n%d.csv",number_of_division) ;
+    sprintf(sphere_file,"ellipse_points_arclength.csv") ;
     std::ifstream file(sphere_file);
     if (!file) {std::cerr << "ファイルを開けません\n";return 1;}    
     double spherePoints;
     while (file >> spherePoints) {
-        oposw.push_back(spherePoints*Radius) ;
+        oposw.push_back(spherePoints*a_axis) ;
         if (file.peek() == ',') file.ignore(); // カンマを飛ばす
-    }    }
+    }    } // */
+
+    items.num_IBMpoints = oposw.size()/3 ; 
     vector<float> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
-    vector<int> num_IBMpoints, lattice_id(oposw.size()/3) ;
-    cout<<"oposw.size() = "<<oposw.size()<<endl ;
-    vector<float> posw(oposw.size()), Gw(oposw.size()), velw(oposw.size()), onB_vec(oposw.size()), nB_vec(oposw.size()) ;
-    items.num_IBMpoints = oposw.size()/3 ;
+    vector<int> num_IBMpoints, lattice_id ;
+    vector<float> posw, Gw, velw, onB_vec, nB_vec ;
     // decide IB infomation
     num_IBMpoints.push_back(items.num_IBMpoints) ;
-    posB.push_back(5*Radius) ; 
-    posB.push_back(0.5*H_axis) ; 
+    posB.push_back(2.50*H_axis) ; 
+    posB.push_back(items.dx*items.ny/2.0) ; 
     posB.push_back(0.5*H_axis) ;
     quaternion.push_back(1); 
     for(i=0;i<3;i++){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
     }
+    quaternion[0] = cos(3.141592/8.0) ; quaternion[2] = sin(3.141592/8.0) ; 
+    // quaternion[0] = cos(3.141592/4.0) ; quaternion[2] = sin(3.141592/4.0) ; 
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.2*1000) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
-    IB.push_back(massB[0]*pow(Radius,2) *2.0/5.0 ) ; 
-    IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
+    densB.push_back(1.5*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ;
 
-    // set each IB points //
-    #pragma omp parallel for private(i,j)
+    cout<<"dens="<<densB[0]<<" massB="<<massB[0]<<endl;
+
+    cout<<"set each IB points"<<endl;
+    float ellipce_length=0 ;
     for(k=0;k<items.num_IBMpoints;k++){
         int near_id=0 ;
+        float theta1 = 2.0*3.141592*(float)k/items.num_IBMpoints ;
+        // oposw.push_back(b_axis*cos(theta1)) ;
+        // oposw.push_back(0.0) ; // y
+        // oposw.push_back(a_axis*sin(theta1)); 
+        if(k!=0){ellipce_length+=sqrt(pow(oposw[k*3+0]-oposw[k*3-3],2)+pow(oposw[k*3+2]-oposw[k*3-1],2)) ;}
         // 楕円の法線ベクトルを算出　原点を0とする楕円の法線ベクトル成分は(2x/a^2 , 2y/b^2)
-        onB_vec[k*3+0]=(oposw[k*3+0]/Radius) ;
-        onB_vec[k*3+1]=(oposw[k*3+1]/Radius) ;
-        onB_vec[k*3+2]=(oposw[k*3+2]/Radius) ;
+        onB_vec.push_back(2.0*oposw[k*3+0]) ;
+        onB_vec.push_back(0) ; // y
+        onB_vec.push_back(2.0*oposw[k*3+2]) ;
         float norm_nBvec=sqrt(pow(onB_vec[k*3+0],2)+pow(onB_vec[k*3+1],2)+pow(onB_vec[k*3+2],2)) ;
+        for(i=0;i<3;i++){onB_vec[k*3+i] /= norm_nBvec ;} // normalize
         for(i=0;i<3;i++){ 
-            // Gw[k*3+i]=0 ; velw[k*3+i]=0 ;
+            Gw.push_back(0) ; velw.push_back(0) ;
             float nbvec= 0, pos= 0 ;
             for(j=0;j<3;j++){
                 pos   += quaS[i*3+j]*oposw[k*3+j]   ;
                 nbvec += quaS[i*3+j]*onB_vec[k*3+j] ;
             }
-            nB_vec[k*3+i]=(nbvec/norm_nBvec) ; posw[k*3+i]=(posB[i]+pos) ;
+            nB_vec.push_back(nbvec) ; posw.push_back(posB[i]+pos) ;
         }
+        // cout<<"k="<<k<<" nbvec="<<nB_vec[k*3+0]<<" "<<onB_vec[k*3+0]<<"  z "<<nB_vec[k*3+2]<<" "<<onB_vec[k*3+2]<<"\n" ;
         float dist1 = 100 ;
         for(i=0;i<items.num_calc;i++){
             float dist2 = sqrt(pow(posx[i]-posw[k*3+0],2) +pow(posy[i]-posw[k*3+1],2) +pow(posz[i]-posw[k*3+2],2) ) ;
@@ -251,14 +252,10 @@ int main (void){
                 dist1 = dist2 ; near_id = i ;
             }
         }
-        lattice_id[k]=(near_id) ;
+        lattice_id.push_back(near_id) ;
     }
+    cout<<" number of IBM Points = "<<items.num_IBMpoints<< " nz= "<< items.nz<<endl ;
 
-    cout<<" massB = "<<massB[0]<< " radius= "<< Radius <<" S(cm^2)= " << 3.151492*Radius*Radius *10000 <<endl<<
-    " num_calc= "<<items.num_calc<<" num_wall= "<<rho.size()-items.num_calc<<" num_f =" <<f.size()<< " num_Fx= "<<Fx.size() <<
-    " H = "<<H_axis<<" a = "<<Radius<<" b = "<<Radius<<" \n "<<" num_IBMpoints= "<<items.num_IBMpoints<<
-    endl<<endl;
-    // printf(" volume = %f m^3 \n",)
 
     // index show in spreadsheet
     // https://docs.google.com/spreadsheets/d/1wy2RkS1ECD7LtZCgyQAtm0fKckvEZmfZUeOMNmJwrgk/edit?gid=0#gid=0
@@ -268,7 +265,7 @@ int main (void){
     // num_calc num_wall
     item.push_back(items.num_calc) ; item.push_back(rho.size()-items.num_calc) ;
     // num_IBM_points IBMdx
-    item.push_back(items.num_IBMpoints) ; item.push_back(4.0*Radius/sqrt(10.0+2.0*sqrt(5.0))/float(number_of_division)) ;
+    item.push_back(items.num_IBMpoints) ; item.push_back(ellipce_length/items.num_IBMpoints) ;
     item.push_back(items.nu) ; item.push_back(pow(10,-9)) ; item.push_back(items.sigma) ;
     item.push_back(items.tau) ; item.push_back(items.taus) ;
     // wall function用の変数を準備
@@ -329,26 +326,26 @@ int main (void){
     //////////////////////////////////////////////////////////////////////////////////////////////////
     output(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,0,items.save_interval) ;
     IB_csv(0,item, posw, velw, Gw) ;
-    vecx_H.push_back(posB[0]/(H_axis)) ; 
-    vecy_H.push_back(posB[1]/(H_axis)) ;
+    vecx_H.push_back(posB[0]/(H_axis)-2.5) ; 
+    vecy_H.push_back(posB[2]/(H_axis)) ;
     printf("start main calculation \n");
     int blockSize = 64;
     int numBlocks = (rho.size() + blockSize - 1) / blockSize ;     
     auto start=chrono::high_resolution_clock::now() ;
     for(int timestep=1 ; timestep<items.total_count+1 ; timestep++){
         // velocity field
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
 
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
-        // col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
-        col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
-        IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
+        col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
+        // col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
+        IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,1) ; // 0 => slip ; 1 => bounce back noslip
 
         // salinity 
         /*col_g_reg     <float> <<<numBlocks, blockSize>>>(d_items, d_taus, d_g, d_ftmp, d_feq, d_sal, d_u, d_v, d_w) ;
@@ -362,12 +359,13 @@ int main (void){
         // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_sal) ;
         // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_phi) ;
         update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_u, d_v, d_w) ; 
-        // update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_uold, d_vold, d_wold) ; 
+        update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_uold, d_vold, d_wold) ; 
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         // LES           <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
+        set_f_ftmp<float>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;
         for(i=0;i<1;i++){
             // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
-            SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,Radius,Radius,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
+            // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
@@ -414,10 +412,13 @@ int main (void){
             for(i=0;i<3;i++){
                 printf("%f  %f  %f  %f\n",posB[i],velB[i],Torque[i],FB[i]);
             }
-            vec_velwx.push_back(velB[0]) ; vec_time.push_back(timestep*items.dt) ;
-            float x_H=posB[0]/(H_axis), y_H=posB[1]/(H_axis) ; 
-            // cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< 800*pow(Radius,3)*9.81/(9.0*items.nu) <<endl;
-            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< 4*pow(Radius,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
+            float x_H=(posB[0]/(H_axis)-2.5), y_H=posB[2]/(H_axis) ; 
+            // cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Stokes Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 4*pow(a_axis,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
+            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< " Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 
+            0.233*pow(a_axis,2)/items.nu * pow( pow(9.81*(densB[0]-1000)/1000,2) /items.nu  ,1/3.0) <<"\n"
+            // << " Potential energy = "<< -massB[0]*9.81*posB[0] <<" Momentum energy ="<< massB[0]*(pow(velB[0],2) + pow(velB[1],2) + pow(velB[2],2))/2.0
+            // << " Total energy ="<< -massB[0]*9.81*posB[0] + massB[0]*(pow(velB[0],2)+pow(velB[1],2)+pow(velB[2],2))/2.0 
+            <<endl;
             vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ;
 
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
@@ -427,7 +428,7 @@ int main (void){
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ; 
     }
 
-    out_C_D(vec_velwx,vec_time) ;
+    out_x_H(vecx_H, vecy_H) ;
     cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<tau[0]<<endl;
     cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;
@@ -442,6 +443,5 @@ int main (void){
     cout<<"compute time = " << duration.count() <<endl;
     cout<<"###############################################"<<endl;
     cout<<"Np = "<<items.num_IBMpoints<<" dx = "<<items.dx<<" IDX_dIBM = "<<item[IDX_dIBM]<< " dIBM/dx = "<<pow(item[IDX_dIBM]/items.dx,1) <<endl; 
-
 
 }

@@ -47,6 +47,7 @@ int main (void){
     items.dx = H_axis/items.nz ; items.dt = items.dx ;
 
     items.nu=0.1364/3.0*items.dt*pow(items.c,2) ;
+    // items.nu = 1.50313*pow(10,-6) ;
 
 
     ////////////////////////////////////////////////////////
@@ -182,10 +183,23 @@ int main (void){
     }
 
     // set IBM points
-    items.num_IBMpoints = 154 ;
+    vector<float> oposw ;
+
+    // read sphere points from csv file
+    {char sphere_file[100] ;
+    sprintf(sphere_file,"ellipse_points_arclength.csv") ;
+    std::ifstream file(sphere_file);
+    if (!file) {std::cerr << "ファイルを開けません\n";return 1;}    
+    double spherePoints;
+    while (file >> spherePoints) {
+        oposw.push_back(spherePoints*a_axis) ;
+        if (file.peek() == ',') file.ignore(); // カンマを飛ばす
+    }    } // */
+
+    items.num_IBMpoints = oposw.size()/3 ; 
     vector<float> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
     vector<int> num_IBMpoints, lattice_id ;
-    vector<float> posw, Gw, velw, oposw, onB_vec, nB_vec ;
+    vector<float> posw, Gw, velw, onB_vec, nB_vec ;
     // decide IB infomation
     num_IBMpoints.push_back(items.num_IBMpoints) ;
     posB.push_back(2.50*H_axis) ; 
@@ -196,9 +210,10 @@ int main (void){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
     }
     quaternion[0] = cos(3.141592/8.0) ; quaternion[2] = sin(3.141592/8.0) ; 
+    // quaternion[0] = cos(3.141592/4.0) ; quaternion[2] = sin(3.141592/4.0) ; 
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.5*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
+    densB.push_back(1.1*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ;
@@ -210,9 +225,9 @@ int main (void){
     for(k=0;k<items.num_IBMpoints;k++){
         int near_id=0 ;
         float theta1 = 2.0*3.141592*(float)k/items.num_IBMpoints ;
-        oposw.push_back(b_axis*cos(theta1)) ;
-        oposw.push_back(0.0) ; // y
-        oposw.push_back(a_axis*sin(theta1)); 
+        // oposw.push_back(b_axis*cos(theta1)) ;
+        // oposw.push_back(0.0) ; // y
+        // oposw.push_back(a_axis*sin(theta1)); 
         if(k!=0){ellipce_length+=sqrt(pow(oposw[k*3+0]-oposw[k*3-3],2)+pow(oposw[k*3+2]-oposw[k*3-1],2)) ;}
         // 楕円の法線ベクトルを算出　原点を0とする楕円の法線ベクトル成分は(2x/a^2 , 2y/b^2)
         onB_vec.push_back(2.0*oposw[k*3+0]) ;
@@ -229,7 +244,7 @@ int main (void){
             }
             nB_vec.push_back(nbvec) ; posw.push_back(posB[i]+pos) ;
         }
-        cout<<"k="<<k<<" nbvec="<<nB_vec[k*3+0]<<" "<<onB_vec[k*3+0]<<"  z "<<nB_vec[k*3+2]<<" "<<onB_vec[k*3+2]<<"\n" ;
+        // cout<<"k="<<k<<" nbvec="<<nB_vec[k*3+0]<<" "<<onB_vec[k*3+0]<<"  z "<<nB_vec[k*3+2]<<" "<<onB_vec[k*3+2]<<"\n" ;
         float dist1 = 100 ;
         for(i=0;i<items.num_calc;i++){
             float dist2 = sqrt(pow(posx[i]-posw[k*3+0],2) +pow(posy[i]-posw[k*3+1],2) +pow(posz[i]-posw[k*3+2],2) ) ;
@@ -311,7 +326,7 @@ int main (void){
     //////////////////////////////////////////////////////////////////////////////////////////////////
     output(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,0,items.save_interval) ;
     IB_csv(0,item, posw, velw, Gw) ;
-    vecx_H.push_back(posB[0]/(H_axis)) ; 
+    vecx_H.push_back(posB[0]/(H_axis)-2.5) ; 
     vecy_H.push_back(posB[2]/(H_axis)) ;
     printf("start main calculation \n");
     int blockSize = 64;
@@ -329,6 +344,7 @@ int main (void){
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
         col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
+        // col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
         IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
 
         // salinity 
@@ -396,8 +412,13 @@ int main (void){
             for(i=0;i<3;i++){
                 printf("%f  %f  %f  %f\n",posB[i],velB[i],Torque[i],FB[i]);
             }
-            float x_H=posB[0]/(H_axis), y_H=posB[2]/(H_axis) ; 
-            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "Re= "<<velB[0]*a_axis/items.nu <<endl;
+            float x_H=(posB[0]/(H_axis)-2.5), y_H=posB[2]/(H_axis) ; 
+            // cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Stokes Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 4*pow(a_axis,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
+            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< " Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 
+            0.233*pow(a_axis,2)/items.nu * pow( pow(9.81*(densB[0]-1000)/1000,2) /items.nu  ,1/3.0) <<"\n"
+            // << " Potential energy = "<< -massB[0]*9.81*posB[0] <<" Momentum energy ="<< massB[0]*(pow(velB[0],2) + pow(velB[1],2) + pow(velB[2],2))/2.0
+            // << " Total energy ="<< -massB[0]*9.81*posB[0] + massB[0]*(pow(velB[0],2)+pow(velB[1],2)+pow(velB[2],2))/2.0 
+            <<endl;
             vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ;
 
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;

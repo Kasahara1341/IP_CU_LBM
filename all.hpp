@@ -105,7 +105,7 @@ void set_quaternionS(int IB_index, float q0, float q1, float q2, float q3, vecto
 template<typename Typ>
 __global__ void SPM(Typ *items, Typ Radius, Typ *posB, Typ *f, Typ *ftmp, Typ *tau, Typ *posx, Typ *posy, Typ *Fx, Typ *Fy, Typ *Fz, Typ *velx, Typ *vely, Typ *velz, Typ *velw) ;
 template<typename Typ>
-__global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *velx, Typ *vely, Typ *velz, Typ *velB) ;
+__global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *velx, Typ *vely, Typ *velz, Typ *velB, Typ *angleVB) ;
 template<typename Typ>
 __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *posw, Typ *posB, Typ *nBvec, Typ *velx, Typ *vely, Typ *velz, Typ *velw, Typ *Fx, Typ *Fy, Typ *Fz, Typ *Gw) ;
 template<typename Typ>

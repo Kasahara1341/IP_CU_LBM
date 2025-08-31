@@ -78,20 +78,29 @@ __global__ void SPM(Typ *items, Typ Radius, Typ *posB, Typ *f, Typ *ftmp, Typ *t
 }
 
 template<typename Typ>
-__global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *velx, Typ *vely, Typ *velz, Typ *velB){
+__global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *velx, Typ *vely, Typ *velz, Typ *velB, Typ *angleVB){
     // smoothed-profile method
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     int id_f = id_rho * (int)items[IDX_Q] ;
     if(id_rho<items[IDX_num_calc]){
         float X1, Y1, Z1 ;
+        float velBx, velBy, velBz ;
         X1 = quaS[0]*(posx[id_rho]-posB[0]) + quaS[3]*(posy[id_rho]-posB[1]) + quaS[6]*(posz[id_rho]-posB[2]) ;
         Y1 = quaS[1]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[7]*(posz[id_rho]-posB[2]) ;
         Z1 = quaS[2]*(posx[id_rho]-posB[0]) + quaS[5]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
+
+        X1 = quaS[0]*(posx[id_rho]-posB[0]) + quaS[1]*(posy[id_rho]-posB[1]) + quaS[2]*(posz[id_rho]-posB[2]) ;
+        Y1 = quaS[3]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[5]*(posz[id_rho]-posB[2]) ;
+        Z1 = quaS[6]*(posx[id_rho]-posB[0]) + quaS[7]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
+
+        velBx = velB[0] + quaS[0]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[1]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[2]*(angleVB[0]*Y1-angleVB[1]*X1) ;
+        velBy = velB[1] + quaS[3]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[4]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[5]*(angleVB[0]*Y1-angleVB[1]*X1) ;
+        velBz = velB[2] + quaS[6]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[7]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[8]*(angleVB[0]*Y1-angleVB[1]*X1) ;
         if(items[IDX_Q]==27){Z1 = Y1 ;}// 3D(xy face)
         float distance = powf(X1/Rada,2) + powf(Z1/Radb,2), fx, fy, fz ; 
-        fx = profile_s2(1.0,distance) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
-        fy = profile_s2(1.0,distance) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
-        fz = profile_s2(1.0,distance) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
+        fx = profile_s2(1.0,distance) * (velBx - velx[id_rho])/items[IDX_dt] ;
+        fy = profile_s2(1.0,distance) * (velBy - vely[id_rho])/items[IDX_dt] ;
+        fz = profile_s2(1.0,distance) * (velBz - velz[id_rho])/items[IDX_dt] ;
         for(int k =0;k<items[IDX_Q];k++){
             f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
             *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
@@ -305,8 +314,8 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             Torque[IB_index*3+2] += (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+1] - (posw[i*3+1]-posB[IB_index*3+1])*Gw[i*3+0] ;
         }
         FB[IB_index*3+0] += (1.0-1000.0/densB[IB_index])*massB[IB_index]*9.81 ;
-        // Torque[IB_index*3+1]=0;
         // FB[IB_index*3+2] -= (1.0-1000.0/densB[IB_index])*massB[IB_index]*9.81 ;
+        
         // Finalyze FB & update velocity of IB_body
         for(int i=0;i<3;i++){
             velB[IB_index*3+i] += items[IDX_dt]*(3*FB[IB_index*3+i]-FBold[i])/massB[IB_index] ;
@@ -316,7 +325,8 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
         for(int i=0;i<3;i++){
             for(int j=0;j<3;j++){
                 angleVB[IB_index*3+i] += items[IDX_dt]
-                *(3*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+j] ;
+                *(3*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+j] ; // original
+                // *(3*quaS[IB_index*3+i*3+j]*Torque[IB_index*3+j] - quaSold[i*3+j]*Torqueold[j]) /inertia[IB_index*3+j] ;
             }
         }
         // update Quaternion & Quaternion
@@ -384,7 +394,7 @@ template void IB_csv<float>(int, vector<float>&, vector<float>&, vector<float>&,
 template void IB_csv<double>(int,vector<double>&,vector<double>&,vector<double>&,vector<double>&);
 template __global__ void SPM<float>(float*, float, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 template __global__ void SPM<double>(double*, double, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*);
-template __global__ void SPM_ellipse<float>(float*, float, float, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
+template __global__ void SPM_ellipse<float>(float*, float, float, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 template __global__ void get_IBMGw2<float>(float*, int*, int*, float*, float*, float*, float*, float*, float*, float*, float*,float*, float*, float*, float*, float*, float*, float*, float*);
 template __global__ void get_IBMGw2<double>(double*, int*, int*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*);
 template __global__ void update_velIBM<float>(float*, int*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
