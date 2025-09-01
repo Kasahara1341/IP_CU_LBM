@@ -60,7 +60,7 @@ int main (void){
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 5.05/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 1.05/items.dt ;
     items.save_interval = items.total_count/20 ;
     // items.total_count=2 ; items.save_interval=2 ;
     cout<<"total count= "<<items.total_count<<" save_interval= "<<items.save_interval<<endl;
@@ -225,7 +225,8 @@ int main (void){
     densB.push_back(1.005*1000) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*pow(Radius,2) *2.0/5.0 ) ; 
     IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
-    float exactUB = 2*pow(Radius,2)*(densB[0]-1000)*9.81/(9*items.nu*1000) ; velB[0] = exactUB ;
+    float exactUB = 2*pow(Radius,2)*(densB[0]-1000)*9.81/(9*items.nu*1000) ; 
+    // velB[0] = exactUB ;
 
     // set each IB points //
     #pragma omp parallel for private(i,j)

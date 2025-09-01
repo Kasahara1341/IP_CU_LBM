@@ -277,15 +277,15 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
         pressure[id_rho]=0 ; velx_old[id_rho] = 0 ; vely_old[id_rho] = 0 ; velz_old[id_rho] = 0 ; 
         for(int k =0;k<items[IDX_Q];k++){
             f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dz]*
-                3.0*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])/(powf(items[IDX_c],1)) ;
+                3.0*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])/(powf(items[IDX_c],2)) ;
             pressure[id_rho]+= f[id_f+k] ;
             velx_old[id_rho]+=items[IDX_cx(k)]*f[id_f+k] ;
             vely_old[id_rho]+=items[IDX_cy(k)]*f[id_f+k] ;
             velz_old[id_rho]+=items[IDX_cz(k)]*f[id_f+k] ;
         } // */
-        velx[id_rho] = velx_old[id_rho] + items[IDX_c]* items[IDX_dz] * Fx[id_rho]/2.0  ;
-        vely[id_rho] = vely_old[id_rho] + items[IDX_c]* items[IDX_dz] * Fy[id_rho]/2.0  ;
-        velz[id_rho] = velz_old[id_rho] + items[IDX_c]* items[IDX_dz] * Fz[id_rho]/2.0  ;
+        velx[id_rho] = velx_old[id_rho] + items[IDX_dz] * Fx[id_rho]/2.0  ;
+        vely[id_rho] = vely_old[id_rho] + items[IDX_dz] * Fy[id_rho]/2.0  ;
+        velz[id_rho] = velz_old[id_rho] + items[IDX_dz] * Fz[id_rho]/2.0  ;
         // Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
     }
 }
@@ -366,11 +366,6 @@ __global__ void update_IBpoint(float *items, int IB_index, float *posB, float *v
         velw[id_rho*3+2] += quaS[IB_index*9+2*3+0] * (angleVB[IB_index*3+1]*oposw[id_rho*3+2] - angleVB[IB_index*3+2]*oposw[id_rho*3+1]) 
                           + quaS[IB_index*9+2*3+1] * (angleVB[IB_index*3+2]*oposw[id_rho*3+0] - angleVB[IB_index*3+0]*oposw[id_rho*3+2]) 
                           + quaS[IB_index*9+2*3+2] * (angleVB[IB_index*3+0]*oposw[id_rho*3+1] - angleVB[IB_index*3+1]*oposw[id_rho*3+0]) ;
-        // printf("id_rho=%d oposw=%f %f %f onBvec=%f %f %f nBvec=%f %f %f\n", id_rho, 
-            // oposw[id_rho*3+0], oposw[id_rho*3+1], oposw[id_rho*3+2], 
-            // onBvec[id_rho*3+0], onBvec[id_rho*3+1], onBvec[id_rho*3+2],
-            // nBvec[id_rho*3+0], nBvec[id_rho*3+1], nBvec[id_rho*3+2]) ;
-
         }
 }
 
