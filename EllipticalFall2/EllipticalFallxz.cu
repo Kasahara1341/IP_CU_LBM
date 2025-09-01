@@ -44,7 +44,7 @@ int main (void){
 
     float H_axis = 0.004 , 
     a_axis = H_axis/8.0 ,b_axis = H_axis/16.0 ;
-    items.dx = H_axis/items.nz ; items.dt = items.dx ;
+    // items.dx = H_axis/items.nz ; items.dt = items.dx ; items.c=items.dx/items.dt ;
 
     // items.nu=0.1364/3.0*items.dt*pow(items.c,2) ;
     // items.nu = 1.50313*pow(10,-6) ;
@@ -196,7 +196,8 @@ int main (void){
         if (file.peek() == ',') file.ignore(); // カンマを飛ばす
     }    } // */
 
-    items.num_IBMpoints = oposw.size()/3 ; 
+    // items.num_IBMpoints = 119 ; // set in below code
+    items.num_IBMpoints = oposw.size()/3 ; // set with read csv
     vector<float> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
     vector<int> num_IBMpoints, lattice_id ;
     vector<float> posw, Gw, velw, onB_vec, nB_vec ;
@@ -225,9 +226,9 @@ int main (void){
     for(k=0;k<items.num_IBMpoints;k++){
         int near_id=0 ;
         float theta1 = 2.0*3.141592*(float)k/items.num_IBMpoints ;
-        // oposw.push_back(b_axis*cos(theta1)) ;
-        // oposw.push_back(0.0) ; // y
-        // oposw.push_back(a_axis*sin(theta1)); 
+        oposw.push_back(b_axis*cos(theta1)) ;
+        oposw.push_back(0.0) ; // y
+        oposw.push_back(a_axis*sin(theta1)); 
         if(k!=0){ellipce_length+=sqrt(pow(oposw[k*3+0]-oposw[k*3-3],2)+pow(oposw[k*3+2]-oposw[k*3-1],2)) ;}
         // 楕円の法線ベクトルを算出　原点を0とする楕円の法線ベクトル成分は(2x/a^2 , 2y/b^2)
         onB_vec.push_back(2.0*oposw[k*3+0]) ;
