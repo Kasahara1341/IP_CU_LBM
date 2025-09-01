@@ -2,8 +2,8 @@
 #include "../all.hpp"
 
 __device__ float profile_s22(float limit_lenght, float distance){
-    float r = limit_lenght/distance ;
-    float result = (0 * (r<0.95)) + (0.5*(sin(3.14159*(r*5 - 5.0)) + 1.0) * (0.95<=r && r<=1.05)) + (1.0 * (1.05<r)) ;
+    float r = distance, width = limit_lenght/2.0  ;
+    float result = (0 * (r > 1.0+width)) + (0.5*(sin(3.14159*(r*5 - 5.0)) + 1.0) * (1.0-width<=r && r<=1.0 + width)) + (1.0 * (1.0-width > r)) ;
     return result ;
 }
 __global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS, float *posB, float *f, float *tau, float *posx, float *posy, float *posz, float *velx, float *vely, float *velz, float *velB){
@@ -16,9 +16,9 @@ __global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS,
         Y1 = quaS[1]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[7]*(posz[id_rho]-posB[2]) ;
         Z1 = quaS[2]*(posx[id_rho]-posB[0]) + quaS[5]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
         float distance = powf(X1/Rada,2) + powf(Y1/Rada,2) + powf(Z1/Radb,2), fx, fy, fz ; 
-        fx = profile_s22(1.0,distance) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
-        fy = profile_s22(1.0,distance) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
-        fz = profile_s22(1.0,distance) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
+        fx = profile_s22(items[IDX_dz]/Rada,distance) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
+        fy = profile_s22(items[IDX_dz]/Rada,distance) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
+        fz = profile_s22(items[IDX_dz]/Rada,distance) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
         for(int k =0;k<items[IDX_Q];k++){
             f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
             *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
@@ -60,7 +60,7 @@ int main (void){
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 2.05/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 5.05/items.dt ;
     items.save_interval = items.total_count/20 ;
     // items.total_count=2 ; items.save_interval=2 ;
     cout<<"total count= "<<items.total_count<<" save_interval= "<<items.save_interval<<endl;
@@ -222,9 +222,10 @@ int main (void){
     }
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.2*1000) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
+    densB.push_back(1.005*1000) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*pow(Radius,2) *2.0/5.0 ) ; 
     IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
+    float exactUB = 2*pow(Radius,2)*(densB[0]-1000)*9.81/(9*items.nu*1000) ; velB[0] = exactUB ;
 
     // set each IB points //
     #pragma omp parallel for private(i,j)
@@ -415,9 +416,10 @@ int main (void){
                 printf("%f  %f  %f  %f\n",posB[i],velB[i],Torque[i],FB[i]);
             }
             vec_velwx.push_back(velB[0]) ; vec_time.push_back(timestep*items.dt) ;
-            float x_H=posB[0]/(H_axis), y_H=posB[1]/(H_axis) ; 
-            // cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< 800*pow(Radius,3)*9.81/(9.0*items.nu) <<endl;
-            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< 4*pow(Radius,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
+            float x_H=posB[0]/(H_axis), y_H=posB[1]/(H_axis), exact_Re=4*pow(Radius,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) ; 
+            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< 800*pow(Radius,3)*9.81/(9.0*items.nu) <<endl;
+            cout<<" exact u= "<< 2*pow(Radius,2)*(densB[0]-1000)*9.81/(9*items.nu*1000) << "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< exact_Re << "error = "<<
+            (velB[0]*2*Radius/items.nu - exact_Re) / exact_Re * 100<<" %"<<endl;
             vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ;
 
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
@@ -428,6 +430,7 @@ int main (void){
     }
 
     out_C_D(vec_velwx,vec_time) ;
+    // out_C_D(vec_velwx,vec_time) ;
     cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<tau[0]<<endl;
     cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;

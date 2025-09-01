@@ -18,6 +18,7 @@ low:
 	# python3 make_figure.py
 # 	python3 make_VTK.py
 # 	python3 make_IB.py
+	python3 C_D.py
 xz:
 	-@rm lib.a a.out
 	ar r lib.a ../library/*
