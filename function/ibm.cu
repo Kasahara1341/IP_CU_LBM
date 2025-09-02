@@ -88,11 +88,13 @@ __global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB
         X1 = quaS[0]*(posx[id_rho]-posB[0]) + quaS[3]*(posy[id_rho]-posB[1]) + quaS[6]*(posz[id_rho]-posB[2]) ;
         Y1 = quaS[1]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[7]*(posz[id_rho]-posB[2]) ;
         Z1 = quaS[2]*(posx[id_rho]-posB[0]) + quaS[5]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
+        velBx = velB[0] + quaS[0]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[3]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[6]*(angleVB[0]*Y1-angleVB[1]*X1) ;
+        velBy = velB[1] + quaS[1]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[4]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[7]*(angleVB[0]*Y1-angleVB[1]*X1) ;
+        velBz = velB[2] + quaS[2]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[5]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[8]*(angleVB[0]*Y1-angleVB[1]*X1) ;
 
         X1 = quaS[0]*(posx[id_rho]-posB[0]) + quaS[1]*(posy[id_rho]-posB[1]) + quaS[2]*(posz[id_rho]-posB[2]) ;
         Y1 = quaS[3]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[5]*(posz[id_rho]-posB[2]) ;
         Z1 = quaS[6]*(posx[id_rho]-posB[0]) + quaS[7]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
-
         velBx = velB[0] + quaS[0]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[1]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[2]*(angleVB[0]*Y1-angleVB[1]*X1) ;
         velBy = velB[1] + quaS[3]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[4]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[5]*(angleVB[0]*Y1-angleVB[1]*X1) ;
         velBz = velB[2] + quaS[6]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[7]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[8]*(angleVB[0]*Y1-angleVB[1]*X1) ;

@@ -12,8 +12,8 @@ __global__ void set_f_ftmp(Typ *items, Typ *f, Typ *ftmp){
     }
 }
 template<typename Typ>
-void out_x_H(const vector<Typ>& x_H, const vector<Typ>& C_time){
-    string filename = "x_H.csv" ;
+void out_x_H(const vector<Typ>& x_H, const vector<Typ>& C_time, const char *filename){
+    // string filename = "x_H.csv" ;
     ofstream ofs(filename) ;
     if(!ofs){cout<<"cannot open file "<<filename<<endl; exit(1);}
     ofs<<"x_H,y_H"<<endl ;
@@ -366,7 +366,7 @@ int main (void){
         set_f_ftmp<float>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;
         for(i=0;i<1;i++){
             // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
-            // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
+            SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
@@ -429,7 +429,7 @@ int main (void){
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ; 
     }
 
-    out_x_H(vecx_H, vecy_H) ;
+    out_x_H(vecx_H, vecy_H,"x_H.csv") ;
     cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<tau[0]<<endl;
     cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;
