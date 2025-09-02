@@ -320,14 +320,14 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
         
         // Finalyze FB & update velocity of IB_body
         for(int i=0;i<3;i++){
-            velB[IB_index*3+i] += items[IDX_dt]*(3*FB[IB_index*3+i]-FBold[i])/massB[IB_index] ;
-            posB[IB_index*3+i] += items[IDX_dt]*(3*velB[IB_index*3+i]-velBold[i]) ;
+            velB[IB_index*3+i] += items[IDX_dt]*(3*FB[IB_index*3+i]-FBold[i])/massB[IB_index]/2.0 ;
+            posB[IB_index*3+i] += items[IDX_dt]*(3*velB[IB_index*3+i]-velBold[i])/2.0 ;
         }
         // update angle velocity 
         for(int i=0;i<3;i++){
             for(int j=0;j<3;j++){
                 angleVB[IB_index*3+i] += items[IDX_dt]
-                *(3*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+j] ; // original
+                *(3*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+j]/2.0 ; // original
                 // *(3*quaS[IB_index*3+i*3+j]*Torque[IB_index*3+j] - quaSold[i*3+j]*Torqueold[j]) /inertia[IB_index*3+j] ;
             }
         }

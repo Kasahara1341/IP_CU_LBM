@@ -53,7 +53,7 @@ int main (void){
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.dt/=1.0 ;
-    items.save_interval = 1.0/items.dt ; items.total_count= 0.6/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 1.2/items.dt ;
     items.save_interval = items.total_count/50 ;
     // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
@@ -215,7 +215,7 @@ int main (void){
     // velB[0] = 0.025 ;
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.1*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
+    densB.push_back(1.5*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ;
@@ -347,7 +347,7 @@ int main (void){
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
         col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
         // col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
-        IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,1) ; // 0 => slip ; 1 => bounce back noslip
+        IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
 
         // salinity 
         /*col_g_reg     <float> <<<numBlocks, blockSize>>>(d_items, d_taus, d_g, d_ftmp, d_feq, d_sal, d_u, d_v, d_w) ;
