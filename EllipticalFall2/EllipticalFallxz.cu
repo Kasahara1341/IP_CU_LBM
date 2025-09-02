@@ -40,7 +40,7 @@ int main (void){
     vector<float> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
     M_inv((int)pow(items.num_velocity,2)), S(items.num_velocity) ;
     set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
-    vector<float> vecx_H, vecy_H ;
+    vector<float> vecx_H, vecy_H, vec_theta ;
 
     float H_axis = 0.004 , 
     a_axis = H_axis/8.0 ,b_axis = H_axis/16.0 ;
@@ -212,9 +212,10 @@ int main (void){
     }
     quaternion[0] = cos(3.141592/8.0) ; quaternion[2] = sin(3.141592/8.0) ; 
     // quaternion[0] = cos(3.141592/4.0) ; quaternion[2] = sin(3.141592/4.0) ; 
+    // velB[0] = 0.025 ;
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.5*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
+    densB.push_back(1.1*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ;
@@ -411,7 +412,7 @@ int main (void){
             cudaMemcpy(FB.data(), d_FB , FB.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
             cout<<" position    velocity    Torque  Force"<<endl;
             for(i=0;i<3;i++){
-                printf("%f  %f  %f  %f\n",posB[i],velB[i],Torque[i],FB[i]);
+                printf("%f  %f  %f  %f\n",posB[i],velB[i],Torque[i]*100000,FB[i]);
             }
             float x_H=(posB[0]/(H_axis)-2.5), y_H=posB[2]/(H_axis) ; 
             // cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Stokes Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 4*pow(a_axis,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
@@ -420,16 +421,18 @@ int main (void){
             // << " Potential energy = "<< -massB[0]*9.81*posB[0] <<" Momentum energy ="<< massB[0]*(pow(velB[0],2) + pow(velB[1],2) + pow(velB[2],2))/2.0
             // << " Total energy ="<< -massB[0]*9.81*posB[0] + massB[0]*(pow(velB[0],2)+pow(velB[1],2)+pow(velB[2],2))/2.0 
             <<endl;
-            vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ;
-
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
-            cout<<"Q0= "<<quaternion[0]<<"  Q2= "<< quaternion[2]<<" thetax "<<acos(quaternion[0])*180/3.141592 *2<<" thetaz "<<asin(quaternion[2])*180/3.141592 *2<<   endl;
+            cout<<"Q0= "<<quaternion[0]<<"  Q2= "<< quaternion[2]<<" theta "<<2 * atan2(quaternion[2],quaternion[0])*180/3.141592<<
+                " norm = "<<pow(quaternion[0],2)+pow(quaternion[2],2)+pow(quaternion[1],2)+pow(quaternion[3],2)<<   endl;
+            vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ; vec_theta.push_back(2 * atan2(quaternion[2],quaternion[0])*180/3.141592) ;
+
         }
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ; 
     }
 
     out_x_H(vecx_H, vecy_H,"x_H.csv") ;
+    out_x_H(vecx_H, vec_theta,"x_theta.csv") ;
     cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<tau[0]<<endl;
     cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;

@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import csv
 
 # パラメータ設定
-a = 1.0   # 長軸
-b = 0.5   # 短軸
-# b = 1.0   # 短軸
+a = 0.5   # 短軸 (x)
+b = 1.0   # 長軸 (z)
+# b = 1.0   # 
 n_points = int(100*1.19)  # 点群の数
 
 # 角度を細かく分割して近似的に弧長を計算

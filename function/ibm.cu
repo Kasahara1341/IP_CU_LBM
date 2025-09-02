@@ -343,7 +343,8 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             quat[IB_index*4+1] -= items[IDX_dt]*( ang[0]*quatold[0] + ang[2]*quatold[2] - ang[1]*quatold[3])/2.0 ;
             quat[IB_index*4+2] -= items[IDX_dt]*( ang[1]*quatold[0] - ang[2]*quatold[1] + ang[0]*quatold[3])/2.0 ;
             quat[IB_index*4+3] -= items[IDX_dt]*( ang[2]*quatold[0] + ang[1]*quatold[1] - ang[0]*quatold[2])/2.0 ;
-            for(int i=0;i<4;i++){quatold[IB_index*4+i]=qua[i];}
+            for(int i=0;i<4;i++){quatold[IB_index*4+i]=qua[i];qua[i]=quat[IB_index*4+i];}
+            for(int i=0;i<4;i++){quat[IB_index*4+i]/=(powf(qua[0],2)+powf(qua[1],2)+powf(qua[2],2)+powf(qua[3],2));}
             set_quaternionS(0,quat[IB_index*4+0],quat[IB_index*4+1],quat[IB_index*4+2],quat[IB_index*4+3],quaS) ;
         }
     }
