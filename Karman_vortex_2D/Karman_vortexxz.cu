@@ -205,7 +205,7 @@ int main (void){
     }
 
     // set IBM points
-    items.num_IBMpoints = Diameter*3.14159/items.dx*1.0 ;
+    items.num_IBMpoints = Diameter*3.14159/items.dx*1.25 ;
     vector<float> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
     vector<int> num_IBMpoints, lattice_id ;
     vector<float> posw, Gw, velw, oposw, onB_vec, nB_vec ;
