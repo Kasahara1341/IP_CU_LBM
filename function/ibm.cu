@@ -45,9 +45,14 @@ __device__ float profile_s(float dz, float Radius, float posx, float posy, float
     float result = (0 * (r<-0.5*dz)) + (0.5*(sin(3.14159*r/dz) + 1.0) * (fabsf(r)<=0.5*dz)) + (1.0 * (r>0.5*dz)) ;
     return result ;
 }
+
 __device__ float profile_s2(float limit_lenght, float distance){
-    float r = distance ;
-    float result = (0 * (r<1.0-limit_lenght/2.0)) + (0.5*(sin(3.14159*(r*5 - 5.0)) + 1.0) * (1.0-limit_lenght/2.0<=r && r<=1.0+limit_lenght/2.0)) + (1.0 * (1.0+limit_lenght/2.0<r)) ;
+    float r = distance, in_line, out_line ; 
+    in_line  = 1.0-limit_lenght + powf(limit_lenght/2,2) ;
+    out_line = 1.0+limit_lenght + powf(limit_lenght/2,2) ;
+    float result =    (0 * ( out_line < r)) 
+                    + (0.5*(sin(3.14159*r/limit_lenght) + 1.0) * ( in_line <= r && r<= out_line)) 
+                    + (1.0 * (r < in_line)) ;
     return result ;
 }
 

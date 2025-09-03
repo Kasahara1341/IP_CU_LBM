@@ -1,9 +1,13 @@
 
 #include "../all.hpp"
 
-__device__ float profile_s22(float limit_lenght, float distance){
-    float r = distance, width = limit_lenght/2.0  ;
-    float result = (0 * (r > 1.0+width)) + (0.5*(sin(3.14159*(r*5 - 5.0)) + 1.0) * (1.0-width<=r && r<=1.0 + width)) + (1.0 * (1.0-width > r)) ;
+__device__ float profile_s22(float limit_lenght, float distance, float Rada){
+    float r = distance, in_line, out_line ; //limit_lenght = 0.1 ;
+    in_line  = 1.0-limit_lenght + powf(limit_lenght/2,2) ;
+    out_line = 1.0+limit_lenght + powf(limit_lenght/2,2) ;
+    float result =    (0 * ( out_line < r)) 
+                    + (0.5*(sin(3.14159*r/limit_lenght/Rada) + 1.0) * ( in_line <= r && r<= out_line)) 
+                    + (1.0 * (r < in_line)) ;
     return result ;
 }
 __global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS, float *posB, float *f, float *tau, float *posx, float *posy, float *posz, float *velx, float *vely, float *velz, float *velB){
@@ -16,9 +20,9 @@ __global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS,
         Y1 = quaS[1]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[7]*(posz[id_rho]-posB[2]) ;
         Z1 = quaS[2]*(posx[id_rho]-posB[0]) + quaS[5]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
         float distance = powf(X1/Rada,2) + powf(Y1/Rada,2) + powf(Z1/Radb,2), fx, fy, fz ; 
-        fx = profile_s22(items[IDX_dz]/Rada,distance) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
-        fy = profile_s22(items[IDX_dz]/Rada,distance) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
-        fz = profile_s22(items[IDX_dz]/Rada,distance) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
+        fx = profile_s22(items[IDX_dz]/Rada,distance,Rada) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
+        fy = profile_s22(items[IDX_dz]/Rada,distance,Rada) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
+        fz = profile_s22(items[IDX_dz]/Rada,distance,Rada) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
         for(int k =0;k<items[IDX_Q];k++){
             f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
             *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
@@ -196,7 +200,7 @@ int main (void){
     Radius = 0.01580/2.0 ;
 
     // read sphere points from csv file
-    int number_of_division = 3 ;
+    int number_of_division = 7 ;
     {char sphere_file[100] ;
     sprintf(sphere_file,"sphere_points_n%d.csv",number_of_division) ;
     std::ifstream file(sphere_file);
@@ -222,7 +226,7 @@ int main (void){
     }
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.005*1000) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
+    densB.push_back(1.01*1000) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*pow(Radius,2) *2.0/5.0 ) ; 
     IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
     float exactUB = 2*pow(Radius,2)*(densB[0]-1000)*9.81/(9*items.nu*1000) ; 
