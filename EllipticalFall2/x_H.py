@@ -2,24 +2,35 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 
-def make_csv(csv_file):
+def read_csv(xarray,yarray,csv_file):
     f = csv.reader(open(csv_file+".csv", 'r'), delimiter=',', doublequote=True, lineterminator='\r\n',
                    quotechar='"', skipinitialspace=True)
-    C_D = []
-    C_time = []
     for row in f:
         if row[0] != 'x_H':
-            C_D.append(float(row[1]))
-            C_time.append(float(row[0]))
+            yarray.append(float(row[1]))
+            xarray.append(float(row[0]))
+
+def make_figure(x_H,y_H,x_Href,y_Href, filename, ymin,ymax):
     plt.figure()
-    plt.plot(C_time, C_D, marker='o', linestyle='-', color='b')
+    plt.plot(x_H,y_H, marker='o', linestyle='-', color='b', label="my LBM")
+    plt.plot(x_Href,y_Href, label="Suzuki & Yoshino(2018)")
+    plt.title(filename)
     plt.ylabel(r'$y/H$')
     plt.xlabel(r'$x/H$')
-    # plt.title('Drag Coefficient C_D over Time')
     plt.grid()
-    # plt.xlim(200,300)
-    # plt.ylim(0,2.3)
-    plt.savefig(csv_file+'.png')
+    plt.legend()
+    plt.ylim(ymin,ymax)
+    plt.savefig(filename+'.png')    
 
-make_csv("x_H")
-make_csv("x_theta")
+x_H    = [] ; y_H    = []
+x_Href = [] ; y_Href = []
+read_csv(x_H,y_H,"x_H")
+read_csv(x_Href,y_Href,"Suzuki_1.1y")
+make_figure(x_H,y_H,x_Href,y_Href, "x_H", 0.36, 0.52) #
+
+x_H    = [] ; y_H    = []
+x_Href = [] ; y_Href = []
+read_csv(x_H,y_H,"x_theta")
+read_csv(x_Href,y_Href,"Suzuki_1.1theta")
+make_figure(x_H,y_H,x_Href,y_Href, "x_theta", -30, 50) #
+

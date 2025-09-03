@@ -46,14 +46,14 @@ int main (void){
     a_axis = H_axis/8.0 ,b_axis = H_axis/16.0 ;
     items.dx = H_axis/items.nz ; items.dt = items.dx ;
 
-    items.nu=0.1364/3.0*items.dt*pow(items.c,2) ;
+    // items.nu=0.1364/3.0*items.dt*pow(items.c,2) ;
     // items.nu = 1.50313*pow(10,-6) ;
 
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.dt/=1.0 ;
-    items.save_interval = 1.0/items.dt ; items.total_count= 0.595/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 2.0/items.dt ;
     items.save_interval = items.total_count/50 ;
     // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
@@ -365,7 +365,7 @@ int main (void){
         set_f_ftmp<float>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;
         for(i=0;i<1;i++){
             // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
-            // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
+            // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 

@@ -53,6 +53,7 @@ dkms.conf
 
 # result of simulation
 **/*.csv
+*/IB_point/*.csv
 */data/*.csv
 */data/*.vtk
 */figure/*.png

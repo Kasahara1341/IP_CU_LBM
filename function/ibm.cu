@@ -46,8 +46,8 @@ __device__ float profile_s(float dz, float Radius, float posx, float posy, float
     return result ;
 }
 __device__ float profile_s2(float limit_lenght, float distance){
-    float r = limit_lenght/distance ;
-    float result = (0 * (r<0.95)) + (0.5*(sin(3.14159*(r*5 - 5.0)) + 1.0) * (0.95<=r && r<=1.05)) + (1.0 * (1.05<r)) ;
+    float r = distance ;
+    float result = (0 * (r<1.0-limit_lenght/2.0)) + (0.5*(sin(3.14159*(r*5 - 5.0)) + 1.0) * (1.0-limit_lenght/2.0<=r && r<=1.0+limit_lenght/2.0)) + (1.0 * (1.0+limit_lenght/2.0<r)) ;
     return result ;
 }
 
@@ -95,14 +95,18 @@ __global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB
         X1 = quaS[0]*(posx[id_rho]-posB[0]) + quaS[1]*(posy[id_rho]-posB[1]) + quaS[2]*(posz[id_rho]-posB[2]) ;
         Y1 = quaS[3]*(posx[id_rho]-posB[0]) + quaS[4]*(posy[id_rho]-posB[1]) + quaS[5]*(posz[id_rho]-posB[2]) ;
         Z1 = quaS[6]*(posx[id_rho]-posB[0]) + quaS[7]*(posy[id_rho]-posB[1]) + quaS[8]*(posz[id_rho]-posB[2]) ;
-        velBx = velB[0] + quaS[0]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[1]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[2]*(angleVB[0]*Y1-angleVB[1]*X1) ;
-        velBy = velB[1] + quaS[3]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[4]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[5]*(angleVB[0]*Y1-angleVB[1]*X1) ;
-        velBz = velB[2] + quaS[6]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[7]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[8]*(angleVB[0]*Y1-angleVB[1]*X1) ;
+        // velBx = velB[0] + quaS[0]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[1]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[2]*(angleVB[0]*Y1-angleVB[1]*X1) ;
+        // velBy = velB[1] + quaS[3]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[4]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[5]*(angleVB[0]*Y1-angleVB[1]*X1) ;
+        // velBz = velB[2] + quaS[6]*(angleVB[1]*Z1-angleVB[2]*Y1) + quaS[7]*(angleVB[2]*X1-angleVB[0]*Z1) + quaS[8]*(angleVB[0]*Y1-angleVB[1]*X1) ;
         if(items[IDX_Q]==27){Z1 = Y1 ;}// 3D(xy face)
         float distance = powf(X1/Rada,2) + powf(Z1/Radb,2), fx, fy, fz ; 
         fx = profile_s2(1.0,distance) * (velBx - velx[id_rho])/items[IDX_dt] ;
         fy = profile_s2(1.0,distance) * (velBy - vely[id_rho])/items[IDX_dt] ;
         fz = profile_s2(1.0,distance) * (velBz - velz[id_rho])/items[IDX_dt] ;
+
+        fx = profile_s2(items[IDX_dz]/Rada,distance) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
+        fy = profile_s2(items[IDX_dz]/Rada,distance) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
+        fz = profile_s2(items[IDX_dz]/Rada,distance) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
         for(int k =0;k<items[IDX_Q];k++){
             f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
             *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
