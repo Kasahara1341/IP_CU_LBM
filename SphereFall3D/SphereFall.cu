@@ -2,7 +2,7 @@
 #include "../all.hpp"
 
 __device__ float profile_s22(float limit_lenght, float distance, float Rada){
-    float r = distance, in_line, out_line ; //limit_lenght = 0.1 ;
+    float r = distance, in_line, out_line ; limit_lenght = 0.1 ;
     in_line  = 1.0-limit_lenght + powf(limit_lenght/2,2) ;
     out_line = 1.0+limit_lenght + powf(limit_lenght/2,2) ;
     float result =    (0 * ( out_line < r)) 

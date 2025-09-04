@@ -44,17 +44,19 @@ int main (void){
 
     float H_axis = 0.004 , 
     a_axis = H_axis/8.0 ,b_axis = H_axis/16.0 ;
+    a_axis = 0.0005 ; b_axis = a_axis/2.0 ;
     // items.dx = H_axis/items.nz ; items.dt = items.dx ; items.c=items.dx/items.dt ;
 
     // items.nu=0.1364/3.0*items.dt*pow(items.c,2) ;
-    items.nu = 1.50313*pow(10,-6) ;
+    // items.nu = 1.50313*pow(10,-6) ;
+    // items.nu = 0.1*pow(items.c,2)*items.dt/3.0 ;
 
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.dt/=1.0 ;
-    items.save_interval = 1.0/items.dt ; items.total_count= 0.85/items.dt ;
-    items.save_interval = items.total_count/50 ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 0.4/items.dt ;
+    items.save_interval = items.total_count/20 ;
     // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
@@ -215,7 +217,7 @@ int main (void){
     // velB[0] = 0.025 ;
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.1*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
+    densB.push_back(1.5*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ;
@@ -226,10 +228,6 @@ int main (void){
     float ellipce_length=0 ;
     for(k=0;k<items.num_IBMpoints;k++){
         int near_id=0 ;
-        float theta1 = 2.0*3.141592*(float)k/items.num_IBMpoints ;
-        oposw.push_back(b_axis*cos(theta1)) ;
-        oposw.push_back(0.0) ; // y
-        oposw.push_back(a_axis*sin(theta1)); 
         if(k!=0){ellipce_length+=sqrt(pow(oposw[k*3+0]-oposw[k*3-3],2)+pow(oposw[k*3+2]-oposw[k*3-1],2)) ;}
         // 楕円の法線ベクトルを算出　原点を0とする楕円の法線ベクトル成分は(2x/a^2 , 2y/b^2)
         onB_vec.push_back(2.0*oposw[k*3+0]) ;
@@ -336,12 +334,12 @@ int main (void){
     auto start=chrono::high_resolution_clock::now() ;
     for(int timestep=1 ; timestep<items.total_count+1 ; timestep++){
         // velocity field
-        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
-        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
+        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
+        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
 
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
@@ -361,7 +359,7 @@ int main (void){
         // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_sal) ;
         // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_phi) ;
         update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_u, d_v, d_w) ; 
-        update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_uold, d_vold, d_wold) ; 
+        // update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_uold, d_vold, d_wold) ; 
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         // LES           <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
         set_f_ftmp<float>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;

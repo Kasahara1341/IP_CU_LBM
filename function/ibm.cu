@@ -324,38 +324,53 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             Torque[IB_index*3+1] += (posw[i*3+2]-posB[IB_index*3+2])*Gw[i*3+0] - (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+2] ;
             Torque[IB_index*3+2] += (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+1] - (posw[i*3+1]-posB[IB_index*3+1])*Gw[i*3+0] ;
         }
-        FB[IB_index*3+0] += (1.0-1000.0/densB[IB_index])*massB[IB_index]*9.81 ;
-        // FB[IB_index*3+2] -= (1.0-1000.0/densB[IB_index])*massB[IB_index]*9.81 ;
+        // FB[IB_index*3+0] += (1.0-1000.0/densB[IB_index])*massB[IB_index]*9.81 ;
+        FB[IB_index*3+2] += (1.0-1000.0/densB[IB_index])*massB[IB_index]*9.81 ;
         
         // Finalyze FB & update velocity of IB_body
         for(int i=0;i<3;i++){
-            velB[IB_index*3+i] += items[IDX_dt]*(3*FB[IB_index*3+i]-FBold[i])/massB[IB_index]/2.0 ;
-            posB[IB_index*3+i] += items[IDX_dt]*(3*velB[IB_index*3+i]-velBold[i])/2.0 ;
+            velB[IB_index*3+i] += items[IDX_dt]*(3.0*FB[IB_index*3+i]-FBold[i])/massB[IB_index]/2.0 ;
+            posB[IB_index*3+i] += items[IDX_dt]*(3.0*velB[IB_index*3+i]-velBold[i])/2.0 ;
         }
+
+
+        // float ang[3], qua[4] ; 
+            // for(int i=0;i<4;i++){qua[i]=quat[IB_index*4+i];}  for(int i=0;i<3;i++){ang[i]=angleVB[IB_index*3+i];}
+            // quat[IB_index*4+0] += items[IDX_dt]*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3])/2.0 ;
+            // quat[IB_index*4+1] += items[IDX_dt]*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3])/2.0 ;
+            // quat[IB_index*4+2] += items[IDX_dt]*( ang[1]*qua[0] - ang[2]*qua[1] + ang[0]*qua[3])/2.0 ;
+            // quat[IB_index*4+3] += items[IDX_dt]*( ang[2]*qua[0] + ang[1]*qua[1] - ang[0]*qua[2])/2.0 ;
         // update angle velocity 
         for(int i=0;i<3;i++){
             for(int j=0;j<3;j++){
                 angleVB[IB_index*3+i] += items[IDX_dt]
-                *(3*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+j]/2.0 ; // original
-                // *(3*quaS[IB_index*3+i*3+j]*Torque[IB_index*3+j] - quaSold[i*3+j]*Torqueold[j]) /inertia[IB_index*3+j] ;
+                *(3.0*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+j]/2.0 ; // original
             }
-        }
+        }        
+        // float ang2[3], qua2[4] ; 
+            // for(int i=0;i<4;i++){qua2[i]=quat[IB_index*4+i];}  for(int i=0;i<3;i++){ang2[i]=angleVB[IB_index*3+i];}
+            // quat[IB_index*4+0] = qua[0] + items[IDX_dt]*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3] -  ang2[0]*qua2[1] - ang2[1]*qua2[2] - ang2[2]*qua2[3])/4.0  ;
+            // quat[IB_index*4+1] = qua[1] + items[IDX_dt]*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3] +  ang2[0]*qua2[0] + ang2[2]*qua2[2] - ang2[1]*qua2[3])/4.0  ;
+            // quat[IB_index*4+2] = qua[2] + items[IDX_dt]*( ang[1]*qua[0] - ang[2]*qua[1] + ang[0]*qua[3] +  ang2[1]*qua2[0] - ang2[2]*qua2[1] + ang2[0]*qua2[3])/4.0  ;
+            // quat[IB_index*4+3] = qua[3] + items[IDX_dt]*( ang[2]*qua[0] + ang[1]*qua[1] - ang[0]*qua[2] +  ang2[2]*qua2[0] + ang2[1]*qua2[1] - ang2[0]*qua2[2])/4.0  ;
+
+
         // update Quaternion & Quaternion
         {float ang[3], qua[4] ; 
             for(int i=0;i<4;i++){qua[i]=quat[IB_index*4+i];}  for(int i=0;i<3;i++){ang[i]=angleVB[IB_index*3+i];}
-            quat[IB_index*4+0] += items[IDX_dt]*3*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3])/2.0 ;
-            quat[IB_index*4+1] += items[IDX_dt]*3*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3])/2.0 ;
-            quat[IB_index*4+2] += items[IDX_dt]*3*( ang[1]*qua[0] - ang[2]*qua[1] + ang[0]*qua[3])/2.0 ;
-            quat[IB_index*4+3] += items[IDX_dt]*3*( ang[2]*qua[0] + ang[1]*qua[1] - ang[0]*qua[2])/2.0 ;
+            quat[IB_index*4+0] += items[IDX_dt]*3.0*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3])/4.0 ;
+            quat[IB_index*4+1] += items[IDX_dt]*3.0*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3])/4.0 ;
+            quat[IB_index*4+2] += items[IDX_dt]*3.0*( ang[1]*qua[0] - ang[2]*qua[1] + ang[0]*qua[3])/4.0 ;
+            quat[IB_index*4+3] += items[IDX_dt]*3.0*( ang[2]*qua[0] + ang[1]*qua[1] - ang[0]*qua[2])/4.0 ;
             for(int i=0;i<3;i++){ang[i]=angleVBold[i];}
-            quat[IB_index*4+0] -= items[IDX_dt]*(-ang[0]*quatold[1] - ang[1]*quatold[2] - ang[2]*quatold[3])/2.0 ;
-            quat[IB_index*4+1] -= items[IDX_dt]*( ang[0]*quatold[0] + ang[2]*quatold[2] - ang[1]*quatold[3])/2.0 ;
-            quat[IB_index*4+2] -= items[IDX_dt]*( ang[1]*quatold[0] - ang[2]*quatold[1] + ang[0]*quatold[3])/2.0 ;
-            quat[IB_index*4+3] -= items[IDX_dt]*( ang[2]*quatold[0] + ang[1]*quatold[1] - ang[0]*quatold[2])/2.0 ;
+            quat[IB_index*4+0] -= items[IDX_dt]*(-ang[0]*quatold[1] - ang[1]*quatold[2] - ang[2]*quatold[3])/4.0 ;
+            quat[IB_index*4+1] -= items[IDX_dt]*( ang[0]*quatold[0] + ang[2]*quatold[2] - ang[1]*quatold[3])/4.0 ;
+            quat[IB_index*4+2] -= items[IDX_dt]*( ang[1]*quatold[0] - ang[2]*quatold[1] + ang[0]*quatold[3])/4.0 ;
+            quat[IB_index*4+3] -= items[IDX_dt]*( ang[2]*quatold[0] + ang[1]*quatold[1] - ang[0]*quatold[2])/4.0 ;
             for(int i=0;i<4;i++){quatold[IB_index*4+i]=qua[i];qua[i]=quat[IB_index*4+i];}
-            for(int i=0;i<4;i++){quat[IB_index*4+i]/=(powf(qua[0],2)+powf(qua[1],2)+powf(qua[2],2)+powf(qua[3],2));}
-            set_quaternionS(0,quat[IB_index*4+0],quat[IB_index*4+1],quat[IB_index*4+2],quat[IB_index*4+3],quaS) ;
-        }
+            // for(int i=0;i<4;i++){quat[IB_index*4+i]/=(powf(qua[0],2)+powf(qua[1],2)+powf(qua[2],2)+powf(qua[3],2));}
+        } // */
+        set_quaternionS(0,quat[IB_index*4+0],quat[IB_index*4+1],quat[IB_index*4+2],quat[IB_index*4+3],quaS) ;
     }
 }
 
