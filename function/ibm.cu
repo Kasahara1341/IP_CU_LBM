@@ -287,16 +287,16 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
         int id_f = id_rho * (int)items[IDX_Q] ;
         pressure[id_rho]=0 ; velx_old[id_rho] = 0 ; vely_old[id_rho] = 0 ; velz_old[id_rho] = 0 ; 
         for(int k =0;k<items[IDX_Q];k++){
-            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dz]*
-                3.0*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])/(powf(items[IDX_c],2)) ;
+            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dt]*
+                3.0*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])/(powf(items[IDX_c],2))  ;
             pressure[id_rho]+= f[id_f+k] ;
             velx_old[id_rho]+=items[IDX_cx(k)]*f[id_f+k] ;
             vely_old[id_rho]+=items[IDX_cy(k)]*f[id_f+k] ;
             velz_old[id_rho]+=items[IDX_cz(k)]*f[id_f+k] ;
         } // */
-        velx[id_rho] = velx_old[id_rho] + items[IDX_dz] * Fx[id_rho]/2.0  ;
-        vely[id_rho] = vely_old[id_rho] + items[IDX_dz] * Fy[id_rho]/2.0  ;
-        velz[id_rho] = velz_old[id_rho] + items[IDX_dz] * Fz[id_rho]/2.0  ;
+        velx[id_rho] = velx_old[id_rho] + items[IDX_dt] * Fx[id_rho]/2.0  ;
+        vely[id_rho] = vely_old[id_rho] + items[IDX_dt] * Fy[id_rho]/2.0  ;
+        velz[id_rho] = velz_old[id_rho] + items[IDX_dt] * Fz[id_rho]/2.0  ;
         // Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
     }
 }

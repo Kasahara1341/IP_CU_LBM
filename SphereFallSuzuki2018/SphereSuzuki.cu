@@ -227,7 +227,7 @@ int main (void){
     }
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1120 *0 + 1000 * 1120/960) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
+    densB.push_back(1120 ) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*pow(Radius,2) *2.0/5.0 ) ; 
     IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
     float exactUB = 2*pow(Radius,2)*(densB[0]-rhoH)*9.81/(9*items.nu*rhoH) ; 

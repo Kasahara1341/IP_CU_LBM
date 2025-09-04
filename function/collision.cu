@@ -155,7 +155,7 @@ __global__ void col_f_SRT(Typ *items, Typ *tau, Typ *f, Typ *ftmp, Typ *feq, Typ
     int k; 
     if(id_rho<items[IDX_num_calc]){
         for(k=0;k<items[IDX_Q];k++){
-            f[id_f+k] = f[id_f+k] - (f[id_f+k]-feq[id_f+k]+Fk[id_f+k]/2.0)/(tau[id_rho]) + Fk[id_f+k] ;
+            f[id_f+k] = f[id_f+k] - (f[id_f+k]-feq[id_f+k]+Fk[id_f+k]/2.0)/tau[id_rho] + Fk[id_f+k] ;
             ftmp [id_f+k] = f[id_f+k] ;
         }
         for(k=0;k<items[IDX_Q];k++){
