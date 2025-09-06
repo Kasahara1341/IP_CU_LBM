@@ -22,7 +22,7 @@ def make_figure(x_H,y_H,x_Href,y_Href, filename, ymin,ymax):
     plt.ylim(ymin,ymax)
     plt.savefig(filename+'.png')    
 
-"""
+# """
 x_H    = [] ; y_H    = []
 x_Href = [] ; y_Href = []
 read_csv(x_H,y_H,"x_H")
@@ -34,7 +34,7 @@ read_csv(x_H,y_H,"x_theta")
 read_csv(x_Href,y_Href,"Suzuki_1.1theta")
 make_figure(x_H,y_H,x_Href,y_Href, "x_theta", -30, 50) # """
 
-# """
+"""
 x_H    = [] ; y_H    = []
 x_Href = [] ; y_Href = []
 read_csv(x_H,y_H,"x_H")

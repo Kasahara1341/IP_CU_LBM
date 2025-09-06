@@ -59,12 +59,13 @@ int main (void){
     set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
     vector<float> vecx_H, vecy_H, vec_velwx, vec_time ;
 
-    items.nu = 0.058/960.0  ;
+    items.nu = 0.373/960.0  ; // Re = 1.5
+    // items.nu = 0.058/960.0  ; // Re = 32
 
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 1.15/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 0.46/items.dt ;
     items.save_interval = items.total_count/20 ;
     // items.total_count=2 ; items.save_interval=2 ;
     cout<<"total count= "<<items.total_count<<" save_interval= "<<items.save_interval<<endl;
@@ -79,12 +80,12 @@ int main (void){
     // divide x, y direction
     for(i=0;i<items.nx;i++){
         float x = (i+0.5)*items.dx*items.ratiox ;
-        if( 0.015<x && 0.085>x ){    // not uniform
-        // if( 0.24<x && 0.60>x &&i<0){ // uniform
+        // if( 0.015<x && 0.085>x ){    // not uniform
+        if( 0.24<x && 0.60>x &&i<0){ // uniform
             if( 0.03<x && 0.07>x){
                 divx.push_back(8) ; continue ;
             }
-            divx.push_back(2) ; continue ;
+            divx.push_back(4) ; continue ;
         }
         else{divx.push_back(1);}
     } // */
@@ -92,12 +93,12 @@ int main (void){
     // divide x, y direction
     for(i=0;i<items.ny;i++){
         float y = (i+0.5)*items.dx*items.ratioy ;
-        if( 0.015<y && 0.085>y ){ // not uniform
-        // if( 0.24<y && 0.60>y &&i<0){ // uniform
+        // if( 0.015<y && 0.085>y ){ // not uniform
+        if( 0.24<y && 0.60>y &&i<0){ // uniform
             if( 0.03<y && 0.07>y){
                 divy.push_back(8) ; continue ;
             }
-            divy.push_back(2) ; continue ;
+            divy.push_back(4) ; continue ;
             // divx.push_back(1) ;
         }
         else{divy.push_back(1);}
@@ -227,7 +228,7 @@ int main (void){
     }
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1120 ) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
+    densB.push_back(1120) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*pow(Radius,2) *2.0/5.0 ) ; 
     IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
     float exactUB = 2*pow(Radius,2)*(densB[0]-rhoH)*9.81/(9*items.nu*rhoH) ; 
@@ -344,12 +345,12 @@ int main (void){
     auto start=chrono::high_resolution_clock::now() ;
     for(int timestep=1 ; timestep<items.total_count+1 ; timestep++){
         // velocity field
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
 
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
@@ -425,7 +426,7 @@ int main (void){
             vec_velwx.push_back(-velB[2]) ; 
             vec_time.push_back(timestep*items.dt) ;
             float x_H=posB[2]/(H_axis), y_H=posB[1]/(H_axis), exact_Re=4*pow(Radius,3)*(densB[0]-rhoH)*9.81/(9*pow(items.nu,2)*rhoH) ; 
-            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[2]*2*Radius/items.nu <<endl;
+            cout<<" z/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[2]*2*Radius/items.nu <<endl;
             vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ;
 
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
@@ -436,8 +437,7 @@ int main (void){
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ; 
     }
 
-    out_C_D(vec_velwx,vec_time) ;
-    // out_C_D(vec_velwx,vec_time) ;
+    out_C_D(vec_time,vec_velwx) ;
     cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<tau[0]<<endl;
     cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;

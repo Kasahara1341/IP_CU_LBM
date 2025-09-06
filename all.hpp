@@ -101,7 +101,8 @@ __global__ void resetF(Typ *items, Typ *Fx, Typ *Fy, Typ *Fz, int num_F) ;
 template<typename Typ>
 void IB_csv(int loop, vector<Typ>& items, vector<Typ>& pos, vector<Typ>& velw, vector<Typ>& Gw) ;
 __host__ __device__ void set_quaternionS(int IB_index, float q0, float q1, float q2, float q3, float *quaS) ;
-void set_quaternionS(int IB_index, float q0, float q1, float q2, float q3, vector<float> &quaS) ;
+template<typename Typ>
+void set_quaternionS(int IB_index, Typ q0, Typ q1, Typ q2, Typ q3, vector<Typ>& quaS) ;
 template<typename Typ>
 __global__ void SPM(Typ *items, Typ Radius, Typ *posB, Typ *f, Typ *ftmp, Typ *tau, Typ *posx, Typ *posy, Typ *Fx, Typ *Fy, Typ *Fz, Typ *velx, Typ *vely, Typ *velz, Typ *velw) ;
 template<typename Typ>

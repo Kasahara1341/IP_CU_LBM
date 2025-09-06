@@ -310,7 +310,7 @@ int main (void){
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; // */
-        /*wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1c.size(), d_wall1c, d_w, d_v, d_u, d_Fz, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),1) ;
+        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1c.size(), d_wall1c, d_w, d_v, d_u, d_Fz, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),1) ;
         wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3c.size(), d_wall3c, d_w, d_v, d_u, d_Fz, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),3) ;
         wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall2c.size(), d_wall2c, d_w, d_u, d_v, d_Fz, d_Fx, d_rho, d_tau, timestep%(items.save_interval/1),2) ;
         wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall4c.size(), d_wall4c, d_w, d_u, d_v, d_Fz, d_Fx, d_rho, d_tau, timestep%(items.save_interval/1),4) ; // */
