@@ -1,6 +1,16 @@
 
 #include "../all.hpp"
-
+template<typename Typ>
+__global__ void update_IBposition(Typ *items, Typ *posB, Typ *posw, Typ *velw, Typ vel_U){
+    int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id_rho<1){
+        posB[2] += items[IDX_dt] * vel_U ;
+        for(int i=0 ; i<items[IDX_num_IBPoints];i++){
+            velw[i*3+2] = vel_U ;
+            posw[i*3+2] += items[IDX_dt] * vel_U ;
+        }
+    }
+}
 __device__ float profile_s22(float limit_lenght, float distance, float Rada){
     float r = distance, in_line, out_line ; limit_lenght = 0.1 ;
     in_line  = 1.0-limit_lenght + powf(limit_lenght/2,2) ;
@@ -59,7 +69,9 @@ int main (void){
     set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
     vector<float> vecx_H, vecy_H, vec_velwx, vec_time ;
 
-    float rhoL=1, rhoH=970.0, muL=1.*pow(10,-5), muH=373.0*pow(10,-3) ;
+    float H_axis = 0.1 , Radius ;
+    Radius = 0.015/2.0 ;
+    float rhoL=1, rhoH=970.0, muL=1.*pow(10,-5), muH=150.0*pow(10,-3) ;
 
     items.nu = muH / rhoH ;
 
@@ -81,28 +93,28 @@ int main (void){
     // divide x, y direction
     for(i=0;i<items.nx;i++){
         float x = (i+0.5)*items.dx*items.ratiox ;
-        // if( 0.02<x && 0.08>x ){    // not uniform
-        if( 0.24<x && 0.60>x &&i<0){ // uniform
+        if( 0.02<x && 0.08>x ){    // not uniform
+        // if( 0.24<x && 0.60>x &&i<0){ // uniform
             if( 0.025<x && 0.075>x){
                 divx.push_back(4) ; continue ;
             }
             divx.push_back(2) ; continue ;
         }
-        else{divx.push_back(4);}
+        else{divx.push_back(1);}
     } // */
 
     // divide x, y direction
     for(i=0;i<items.ny;i++){
         float y = (i+0.5)*items.dx*items.ratioy ;
-        // if( 0.02<y && 0.08>y ){ // not uniform
-        if( 0.24<y && 0.60>y &&i<0){ // uniform
+        if( 0.02<y && 0.08>y ){ // not uniform
+        // if( 0.24<y && 0.60>y &&i<0){ // uniform
             if( 0.025<y && 0.075>y){
                 divy.push_back(4) ; continue ;
             }
             divy.push_back(2) ; continue ;
             // divx.push_back(1) ;
         }
-        else{divy.push_back(4);}
+        else{divy.push_back(1);}
     } // */
 
 
@@ -141,7 +153,7 @@ int main (void){
                         float local_z = (0.5 + l)*items.dx ;
                         posx.push_back(local_x) ; posz.push_back(local_z) ;
                         posy.push_back( (j + (2*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ) ;
-                        delX.push_back( items.dx*items.ratiox/divx[i]) ; delY.push_back( items.dx*items.ratioy/divy[j]) ;
+                        delX.push_back( items.dx*items.ratiox/float(divx[i])) ; delY.push_back( items.dx*items.ratioy/float(divy[j])) ;
                         sal.push_back(0) ; phi.push_back(1) ;           
                         // sal[sal.size()-1] = 12.13-12.13*tanh((local_z-(h2+(local_x-3)*slope_eta0))/thicness) ; // 6m 
                         // phi[phi.size()-1] = 0.5 - 0.5*tanh( (posz[posz.size()-1] - (d0+eta) )/items.PFthick*2.0 ) ; // 
@@ -197,8 +209,6 @@ int main (void){
 
     // set IBM points //
     vector<float> oposw ;
-    float H_axis = 0.1 , Radius ;
-    Radius = 0.015/2.0 ;
 
     // read sphere points from csv file
     int number_of_division = 16 ;
@@ -377,8 +387,10 @@ int main (void){
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw,rhoH) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
-            update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
-            update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
+            update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,d_velw,0.044) ;
+
+            // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
+            // update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
             search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
         } //
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
