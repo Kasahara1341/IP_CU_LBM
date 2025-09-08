@@ -63,7 +63,7 @@ int main (void){
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 100/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 200/items.dt ;
     items.save_interval = items.total_count/40 ;
     // items.total_count=20 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
@@ -202,7 +202,7 @@ int main (void){
     num_IBMpoints.push_back(items.num_IBMpoints) ;
     posB.push_back(0.42) ; 
     posB.push_back(items.dx*items.ny/2.0) ; 
-    posB.push_back(5*Diameter) ;
+    posB.push_back(2*Diameter) ;
     quaternion.push_back(1); 
     for(i=0;i<3;i++){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
@@ -362,8 +362,6 @@ int main (void){
         // LES           <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
         // set_f_ftmp<float>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;
         for(i=0;i<1;i++){
-            update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,vel_U) ;
-            search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
             // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
             // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw, rhoH) ;
@@ -371,6 +369,9 @@ int main (void){
 
             // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold) ;
             // update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
+            // original code
+            update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,vel_U) ;
+            search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
         } //
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
@@ -409,7 +410,7 @@ int main (void){
                 // sum_press -= Gw[i] *item[IDX_dIBM] * item[IDX_dIBM] * item[IDX_dIBM] * 1000 ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
                 // sum_press -= Gw[i*3] *item[IDX_dIBM] * item[IDX_dIBM] ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
                 // sum_press -= Gw[i] *item[IDX_dIBM] * item[IDX_dz] * items.dx * 1000 ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
-                sum_press += Gw[i*3] ; 
+                sum_press -= Gw[i*3+2] ; 
             }
             F_D = sum_press ;
             cout<<"C_D = "<<F_D/(500.0*pow(vel_U,2)*Diameter)<<" Re= "<<vel_U*Diameter/items.nu<<

@@ -90,7 +90,7 @@ def process_file(counter):
     grid.cell_data["velocity"] = np.array(vel_data)
     grid.cell_data["force"] = np.array(force_data)
     # 保存
-    grid.save("vtu/LBM%04d.vtu"%counter)
+    grid.save("vtu_KM/LBM%04d.vtu"%counter)
 
 def main():
     files = sorted(glob.glob('./data/Fakhari_LBM*.csv'))  

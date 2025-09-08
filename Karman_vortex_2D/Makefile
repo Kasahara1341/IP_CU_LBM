@@ -42,7 +42,7 @@ fig:
 	python3 make_figure.py
 vtk:
 	python3 make_VTK.py
-# 	python3 make_IB.py
+	python3 make_IB.py
 csv:
 	python3 make_result/csv_height_A.py
 	python3 make_result/csv_height_B.py

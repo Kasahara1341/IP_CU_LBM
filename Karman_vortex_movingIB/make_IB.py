@@ -25,7 +25,7 @@ def process_file(counter):
     pdata["velocity"] = vectors
 
     # VTP形式で保存
-    pdata.save(f"vtu/IB_point{counter:04d}.vtp")    
+    pdata.save(f"vtu_KM/IB_point{counter:04d}.vtp")    
 
 def main():
     files = sorted(glob.glob('./IB_point/ibm*.csv'))  

@@ -25,7 +25,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cu
 	nvcc $(NVCC_FLAGS) -o $@ $<
 rm:
 	-@rm data/*
-	-@rm vtu/*
+	-@rm vtu_KM/*
 	-@rm figure/*
 rmR:
 	-@rm make_result/1_*.csv
