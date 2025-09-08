@@ -123,7 +123,7 @@ __global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB
 // Suzuki & Yoshino (2018) method 
 template<typename Typ>
 __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *posw, Typ *posB, Typ *nBvec, 
-    Typ *velx, Typ *vely, Typ *velz, Typ *velw, Typ *Fx, Typ *Fy, Typ *Fz, Typ *Gw){
+    Typ *velx, Typ *vely, Typ *velz, Typ *velw, Typ *Fx, Typ *Fy, Typ *Fz, Typ *Gw, Typ rhof){
     // https://www2.nagare.or.jp/cfd/cfd32/cfd32papers/paper/F10-1.pdf 
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     if(id_rho<items[IDX_num_IBPoints]){
@@ -214,32 +214,32 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
 
         Typ sigma_x=0, sigma_y=0, sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma x
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)]/3.0)*u_w*u_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *1  - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(fw2[k]-items[IDX_w(k)]/3.0)*u_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)]/3.0)*u_w*v_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0  - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(fw2[k]-items[IDX_w(k)]/3.0)*u_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)]/3.0)*u_w*w_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0  - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(fw2[k]-items[IDX_w(k)]/3.0)*u_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)])*u_w*u_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *1  - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(fw2[k]-items[IDX_w(k)])*u_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)])*u_w*v_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0  - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(fw2[k]-items[IDX_w(k)])*u_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)])*u_w*w_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0  - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(fw2[k]-items[IDX_w(k)])*u_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+0] = -(sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2]) ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma y
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)]/3.0)*v_w*u_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(fw2[k]-items[IDX_w(k)]/3.0)*v_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)]/3.0)*v_w*v_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *1 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(fw2[k]-items[IDX_w(k)]/3.0)*v_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)]/3.0)*v_w*w_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(fw2[k]-items[IDX_w(k)]/3.0)*v_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)])*v_w*u_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(fw2[k]-items[IDX_w(k)])*v_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)])*v_w*v_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *1 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(fw2[k]-items[IDX_w(k)])*v_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)])*v_w*w_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(fw2[k]-items[IDX_w(k)])*v_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+1] = -(sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2]) ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma z
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)]/3.0)*w_w*u_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(fw2[k]-items[IDX_w(k)]/3.0)*w_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)]/3.0)*w_w*v_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(fw2[k]-items[IDX_w(k)]/3.0)*w_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)]/3.0)*w_w*w_w)/powf(items[IDX_c],2)
-                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *1 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(fw2[k]-items[IDX_w(k)]/3.0)*w_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)])*w_w*u_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(fw2[k]-items[IDX_w(k)])*w_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)])*w_w*v_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *0 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(fw2[k]-items[IDX_w(k)])*w_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)])*w_w*w_w)/powf(items[IDX_c],2)
+                     - 0.5/tau[lattice_id[id_rho]] * fw2[k] *1 - (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw2[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(fw2[k]-items[IDX_w(k)])*w_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+2] = -(sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2])  ;
 
@@ -257,27 +257,27 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
         }
         sigma_x=0, sigma_y=0, sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma x
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)]/3.0)*u_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)]/3.0)*u_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)]/3.0)*u_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)])*u_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)])*u_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)])*u_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+0] = sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2] ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma y
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)]/3.0)*v_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)]/3.0)*v_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)]/3.0)*v_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)])*v_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)])*v_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)])*v_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+1] = (sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2]) ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma z
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)]/3.0)*w_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)]/3.0)*w_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)]/3.0)*w_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(fw1[k]-items[IDX_w(k)])*w_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(fw1[k]-items[IDX_w(k)])*w_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(fw1[k]-items[IDX_w(k)])*w_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+2] = (sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2] ) ;
         for(int i=0;i<3;i++){
-            Gw[id_rho*3+i]*= 960.0*powf(items[IDX_c],2)/3.0 * powf(items[IDX_dIBM],dimension-1) ;
+            Gw[id_rho*3+i]*= rhof*powf(items[IDX_c],2)/3.0 * powf(items[IDX_dIBM],dimension-1) ;
         }
     }
 }
@@ -288,22 +288,22 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
         int id_f = id_rho * (int)items[IDX_Q] ;
         pressure[id_rho]=0 ; velx_old[id_rho] = 0 ; vely_old[id_rho] = 0 ; velz_old[id_rho] = 0 ; 
         for(int k =0;k<items[IDX_Q];k++){
-            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dt]*
-                1.0*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])  ;
+            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dz]*
+                3.0*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])/powf(items[IDX_c],2)  ;
             pressure[id_rho]+= f[id_f+k] ;
             velx_old[id_rho]+=items[IDX_cx(k)]*f[id_f+k] ;
             vely_old[id_rho]+=items[IDX_cy(k)]*f[id_f+k] ;
             velz_old[id_rho]+=items[IDX_cz(k)]*f[id_f+k] ;
         } // */
-        velx[id_rho] = velx_old[id_rho] + powf(items[IDX_c],2)*items[IDX_dt] * Fx[id_rho]/2.0 ;
-        vely[id_rho] = vely_old[id_rho] + powf(items[IDX_c],2)*items[IDX_dt] * Fy[id_rho]/2.0 ;
-        velz[id_rho] = velz_old[id_rho] + powf(items[IDX_c],2)*items[IDX_dt] * Fz[id_rho]/2.0 ;
+        velx[id_rho] = velx_old[id_rho] + items[IDX_dz] * Fx[id_rho]/2.0 ;
+        vely[id_rho] = vely_old[id_rho] + items[IDX_dz] * Fy[id_rho]/2.0 ;
+        velz[id_rho] = velz_old[id_rho] + items[IDX_dz] * Fz[id_rho]/2.0 ;
         // Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
     }
 }
 
 __global__ void update_IBbody(float *items, int IB_index, float *massB, float *densB, float *inertia, float *FB, float *posB, float *Torque, float *velB, float *quat, 
-    float *quaS, float *angleVB, float *posw, float *Gw, float *quatold){
+    float *quaS, float *angleVB, float *posw, float *Gw, float *quatold, float rhof){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     if(id_rho<1){
         float quaSold[9], FBold[3], Torqueold[3], velBold[3], angleVBold[3] ;
@@ -325,8 +325,8 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             Torque[IB_index*3+1] += (posw[i*3+2]-posB[IB_index*3+2])*Gw[i*3+0] - (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+2] ;
             Torque[IB_index*3+2] += (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+1] - (posw[i*3+1]-posB[IB_index*3+1])*Gw[i*3+0] ;
         }
-        // FB[IB_index*3+0] += (1.0-960.0/densB[IB_index])*massB[IB_index]*9.81 ;
-        FB[IB_index*3+2] += (1.0-960.0/densB[IB_index])*massB[IB_index]*9.81 ;
+        FB[IB_index*3+0] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
+        // FB[IB_index*3+2] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
         
         // Finalyze FB & update velocity of IB_body
         for(int i=0;i<3;i++){
@@ -420,7 +420,7 @@ template void set_quaternionS<double>(int IB_index, double q0, double q1, double
 template __global__ void SPM<float>(float*, float, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 template __global__ void SPM<double>(double*, double, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*);
 template __global__ void SPM_ellipse<float>(float*, float, float, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
-template __global__ void get_IBMGw2<float>(float*, int*, int*, float*, float*, float*, float*, float*, float*, float*, float*,float*, float*, float*, float*, float*, float*, float*, float*);
-template __global__ void get_IBMGw2<double>(double*, int*, int*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*);
+template __global__ void get_IBMGw2<float>(float*, int*, int*, float*, float*, float*, float*, float*, float*, float*, float*,float*, float*, float*, float*, float*, float*, float*, float*, float);
+template __global__ void get_IBMGw2<double>(double*, int*, int*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double);
 template __global__ void update_velIBM<float>(float*, int*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 template __global__ void update_velIBM<double>(double*, int*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*);

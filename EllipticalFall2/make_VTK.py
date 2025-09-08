@@ -95,7 +95,7 @@ def process_file(counter):
 def main():
     files = sorted(glob.glob('./data/Fakhari_LBM*.csv'))  
     total_count=len(files)
-    with Pool(cpu_count()) as pool:
+    with Pool(processes = int(cpu_count()/2)) as pool:
         # pool.map(process_file, range(0, 200, 10))
         pool.map(process_file, range(0,total_count,1))
         # pool.map(process_file, range(20,21))

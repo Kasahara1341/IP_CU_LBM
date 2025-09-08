@@ -21,6 +21,8 @@ plt.ylim(-0.14, 0.0)
 
 read_csv("x_H")
 read_csv("Sphere_SuzukiRe32") 
+read_csv("Sphere_SuzukiRe11") 
+read_csv("Sphere_SuzukiRe4.1") 
 read_csv("Sphere_SuzukiRe1.5") 
 plt.legend()
 

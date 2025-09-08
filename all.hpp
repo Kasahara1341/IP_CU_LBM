@@ -108,10 +108,10 @@ __global__ void SPM(Typ *items, Typ Radius, Typ *posB, Typ *f, Typ *ftmp, Typ *t
 template<typename Typ>
 __global__ void SPM_ellipse(Typ *items, Typ Rada, Typ Radb, Typ *quaS, Typ *posB, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *velx, Typ *vely, Typ *velz, Typ *velB, Typ *angleVB) ;
 template<typename Typ>
-__global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *posw, Typ *posB, Typ *nBvec, Typ *velx, Typ *vely, Typ *velz, Typ *velw, Typ *Fx, Typ *Fy, Typ *Fz, Typ *Gw) ;
+__global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *tau, Typ *posx, Typ *posy, Typ *posz, Typ *posw, Typ *posB, Typ *nBvec, Typ *velx, Typ *vely, Typ *velz, Typ *velw, Typ *Fx, Typ *Fy, Typ *Fz, Typ *Gw, Typ rhof) ;
 template<typename Typ>
 __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Typ *pressure, Typ *tau, Typ *velx, Typ *vely, Typ *velz, Typ *velx_old, Typ *vely_old, Typ *velz_old, Typ *Fx, Typ *Fy, Typ *Fz) ;
-__global__ void update_IBbody(float *items, int IB_index, float *massB, float *densB, float *inertia, float *FB, float *posB, float *Torque, float *velB, float *quat, float *quaS, float *angleVB, float *posw, float *Gw, float *quatold) ;
+__global__ void update_IBbody(float *items, int IB_index, float *massB, float *densB, float *inertia, float *FB, float *posB, float *Torque, float *velB, float *quat, float *quaS, float *angleVB, float *posw, float *Gw, float *quatold, float rhof) ;
 __global__ void update_IBpoint(float *items, int IB_index, float *posB, float *velB, float *angleVB, float *quaS, float *posw, float *oposw, float *nBvec, float *onBvec, float *velw) ;
 __global__ void search_IBlattice(float *items, int IB_index, int *lattice_id, int *neib, float *posx, float *posy, float *posz, float *posw) ;
 
