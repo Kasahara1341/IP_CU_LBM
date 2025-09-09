@@ -422,7 +422,7 @@ int main (void){
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
             cout<<"Q0= "<<quaternion[0]<<"  Q2= "<< quaternion[2]<<" theta "<<2 * atan2(quaternion[2],quaternion[0])*180/3.141592<<
                 " norm = "<<pow(quaternion[0],2)+pow(quaternion[2],2)+pow(quaternion[1],2)+pow(quaternion[3],2)<<   endl;
-            vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ; vec_theta.push_back(2 * atan2(quaternion[2],quaternion[0])*180/3.141592) ;
+            vecx_H.push_back(x_H) ; vecy_H.push_back(1-y_H) ; vec_theta.push_back(2 * atan2(quaternion[2],quaternion[0])*180/3.141592) ;
 
         }
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;

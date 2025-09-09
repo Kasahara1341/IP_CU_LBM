@@ -27,7 +27,7 @@ x_H    = [] ; y_H    = []
 x_Href = [] ; y_Href = []
 read_csv(x_H,y_H,"x_H")
 read_csv(x_Href,y_Href,"Suzuki_1.1y")
-make_figure(x_H,y_H,x_Href,y_Href, "x_H", 0.36, 0.64) #
+make_figure(x_H,y_H,x_Href,y_Href, "x_H", 0.36, 0.52) #
 x_H    = [] ; y_H    = []
 x_Href = [] ; y_Href = []
 read_csv(x_H,y_H,"x_theta")
