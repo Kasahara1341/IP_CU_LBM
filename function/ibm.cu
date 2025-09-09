@@ -199,9 +199,6 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
         }
 
         Typ alpha = 22.5/180.0*3.14159, beta ;
-        if(id_rho==1278){
-            printf("nBvec x=%f y=%f z=%f \n",nBvec[id_rho*3+0],nBvec[id_rho*3+1],nBvec[id_rho*3+2]) ;
-        }
         for(int k=0;k<items[IDX_Q];k++){
             Typ tmp  = (nBvec[id_rho*3+0]*items[IDX_cx(k)] + nBvec[id_rho*3+1]*items[IDX_cy(k)] + nBvec[id_rho*3+2]*items[IDX_cz(k)])/items[IDX_c] ; // c times n
             Typ tmp2 = sqrtf( powf(items[IDX_cx(k)],2) + powf(items[IDX_cy(k)],2) + powf(items[IDX_cz(k)],2))/items[IDX_c] * sin(alpha) ; // |c|sin(alpha)
@@ -213,10 +210,6 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
             fw2[k] = (fw[k] * (tmp>=0))
             + ( ((1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3) ) * (-tmp2 <= tmp && tmp < 0))
             + ( (fw[k_inv[k]] + tmp3 ) * (tmp < - tmp2)) ;
-            if(id_rho==1278){
-                // printf("k=%d fw=%f fw1=%f fw2=%f 2danme=%f 1dan=%f beta=%f tmp3=%f tmp=%f\n",k,fw[k],fw1[k],fw2[k], (1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3),fw[k],
-            // beta,tmp3,tmp) ;
-            }
         }
 
 
@@ -298,7 +291,7 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
         pressure[id_rho]=0 ; velx_old[id_rho] = 0 ; vely_old[id_rho] = 0 ; velz_old[id_rho] = 0 ; 
         for(int k =0;k<items[IDX_Q];k++){
             f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dt]*
-                3*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])  ;
+                (items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])  ;
             pressure[id_rho]+= f[id_f+k] ;
             velx_old[id_rho]+=items[IDX_cx(k)]*f[id_f+k] ;
             vely_old[id_rho]+=items[IDX_cy(k)]*f[id_f+k] ;
@@ -334,8 +327,8 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             Torque[IB_index*3+1] += (posw[i*3+2]-posB[IB_index*3+2])*Gw[i*3+0] - (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+2] ;
             Torque[IB_index*3+2] += (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+1] - (posw[i*3+1]-posB[IB_index*3+1])*Gw[i*3+0] ;
         }
-        // FB[IB_index*3+0] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
-        FB[IB_index*3+2] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
+        FB[IB_index*3+0] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
+        // FB[IB_index*3+2] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
         
         // Finalyze FB & update velocity of IB_body
         for(int i=0;i<3;i++){
