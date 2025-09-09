@@ -388,10 +388,10 @@ int main (void){
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
             // original code
-            // update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,d_velw,0.044) ;
+            update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,d_velw,0.044) ;
 
-            update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
-            update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
+            // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
+            // update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
             search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
         } //
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
