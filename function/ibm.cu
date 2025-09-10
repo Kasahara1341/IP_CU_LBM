@@ -204,12 +204,13 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
             Typ tmp2 = sqrtf( powf(items[IDX_cx(k)],2) + powf(items[IDX_cy(k)],2) + powf(items[IDX_cz(k)],2))/items[IDX_c] * sin(alpha) ; // |c|sin(alpha)
             Typ tmp3 = 6.0*items[IDX_w(k)]* (items[IDX_cx(k)]*u_w + items[IDX_cy(k)]*v_w + items[IDX_cz(k)]*w_w)/powf(items[IDX_c],2) ;   // 6EcU
             beta     = fabs(tmp)/(tmp2+powf(10,-10)) ; 
+            tmp2 = 0 ; // 9999
             fw1[k] = (fw[k] * (tmp<=0))
-            + ( ((1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3) ) * (0 < tmp && tmp <= tmp2) )
-            + ( (fw[k_inv[k]] + tmp3 ) * (tmp > tmp2 )) ;
+                + ( ((1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3) ) * (0 < tmp && tmp <= tmp2) )
+                + ( (fw[k_inv[k]] + tmp3 ) * (tmp > tmp2 )) ;
             fw2[k] = (fw[k] * (tmp>=0))
-            + ( ((1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3) ) * (-tmp2 <= tmp && tmp < 0))
-            + ( (fw[k_inv[k]] + tmp3 ) * (tmp < - tmp2)) ;
+                + ( ((1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3) ) * (-tmp2 <= tmp && tmp < 0))
+                + ( (fw[k_inv[k]] + tmp3 ) * (tmp < - tmp2)) ;
             // if(id_rho==check_id){
                 // printf("k=%d fw=%e fw1=%e fw2=%e  tmp=%e beta=%e |c|sin(alpha)=%f\n",k,fw[k],fw1[k],fw2[k],tmp,beta,tmp2); 
                 // printf("fw1 [%d]  fw2 [%d] \n",(0 < tmp && tmp <= tmp2),(-tmp2 <= tmp && tmp < 0)) ;
@@ -285,16 +286,16 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
         int id_f = id_rho * (int)items[IDX_Q] ;
         pressure[id_rho]=0 ; velx[id_rho] = 0 ; vely[id_rho] = 0 ; velz[id_rho] = 0 ; 
         for(int k =0;k<items[IDX_Q];k++){
-            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho]*0)* items[IDX_w(k)]*items[IDX_dt]*
+            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dt]*
                 (items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])  ;
             pressure[id_rho]+= f[id_f+k] ;
             velx[id_rho]+=items[IDX_cx(k)]*f[id_f+k] ;
             vely[id_rho]+=items[IDX_cy(k)]*f[id_f+k] ;
             velz[id_rho]+=items[IDX_cz(k)]*f[id_f+k] ;
         } // */
-        // velx[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fx[id_rho]/2.0 ;
-        // vely[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fy[id_rho]/2.0 ;
-        // velz[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fz[id_rho]/2.0 ;
+        velx[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fx[id_rho]/2.0 ;
+        vely[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fy[id_rho]/2.0 ;
+        velz[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fz[id_rho]/2.0 ;
         // Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
     }
 }
@@ -308,8 +309,8 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             quatold[IB_index*4+2],quatold[IB_index*4+3],quaSold) ;
         for(int i=0;i<3;i++){
             FBold[i] = FB[IB_index*3+i] ; FB[IB_index*3+i]=0 ;
-            Torqueold[i] = Torque[IB_index*3+i] ; Torque[IB_index*3+i]=0 ;
-            velBold[i] = velB[IB_index*3+i] ; 
+            Torqueold[i]  = Torque[IB_index*3+i] ; Torque[IB_index*3+i]=0 ;
+            velBold[i]    = velB[IB_index*3+i] ; 
             angleVBold[i] = angleVB[IB_index*3+i] ;
         }
 
