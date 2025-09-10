@@ -56,14 +56,14 @@ __global__ void set_velocity1(Typ *items, int wall_number, int *wall, Typ *velx,
         velx[id_rho] = velocity ;
     }
 }
-template<typename Typ>
-__global__ void set_scalar(Typ *items, int *neib, int direction, int wall_number, int *wall, Typ *scalar){
-    int id = blockIdx.x * blockDim.x + threadIdx.x ;
-    if(id<wall_number ){ 
-        int id_rho = wall[id] ; int id_f = id_rho * (int)items[IDX_Q] ;
-        scalar[id_rho] = scalar[neib[id_f + direction]] ; // set scalar value from neighbor
-    }
-}
+// template<typename Typ>
+// __global__ void set_scalar(Typ *items, int *neib, int direction, int wall_number, int *wall, Typ *scalar){
+//     int id = blockIdx.x * blockDim.x + threadIdx.x ;
+//     if(id<wall_number ){ 
+//         int id_rho = wall[id] ; int id_f = id_rho * (int)items[IDX_Q] ;
+//         scalar[id_rho] = scalar[neib[id_f + direction]] ; // set scalar value from neighbor
+//     }
+// }
 
 template<typename Typ>
 void set_wall_cylinder(const vector<Typ>& items, const vector<int>& neib, vector<Typ>& posx, vector<Typ>& posy, vector<int>& wall1, vector<int>& wall2, vector<int>& wall3, vector<int>& wall4, vector<int>& wall5, vector<int>& wall6){
@@ -106,7 +106,7 @@ int main (void){
     vector<float> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
     M_inv((int)pow(items.num_velocity,2)), S(items.num_velocity) ;
     set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
-    float Re_number = 40.0, Diameter=0.06,  vel_U = 0.015 ; int wall_b_number = 3 ;
+    float Re_number = 40.0, Diameter=0.06,  vel_U = 0.01 ; int wall_b_number = 1 ;
     cout<<" input Re_number to " ;
     cin >> Re_number ;
     items.nu = Diameter*vel_U/Re_number ; 
@@ -119,8 +119,8 @@ int main (void){
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.save_interval = 1.0/items.dt ; items.total_count= 200/items.dt ;
-    items.save_interval = items.total_count/200 ;
-    // items.total_count=2 ; items.save_interval=1 ;
+    items.save_interval = items.total_count/20 ;
+    // items.total_count=20 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
         
@@ -132,14 +132,14 @@ int main (void){
     // divide x, y direction
     for(i=0;i<items.nx;i++){
         float x = (i+0.5)*items.dx*items.ratiox ;
-        if( 0.2<x && 0.9>x ){    // not uniform
-        // if( 0.24<x && 0.60>x &&i<0){ // uniform
+        // if( 0.2<x && 0.9>x ){    // not uniform
+        if( 0.24<x && 0.60>x &&i<0){ // uniform
             if( 0.22<x && 0.8>x){
-                divx.push_back(8) ; continue ;
+                divx.push_back(1) ; continue ;
             }
-            divx.push_back(8) ; continue ;
+            divx.push_back(1) ; continue ;
         }
-        else{divx.push_back(8);}
+        else{divx.push_back(1);}
     } // */
 
     // divide x, y direction
@@ -191,7 +191,7 @@ int main (void){
 
                         // pressure.push_back(9.81*(items.dx*items.nz-z) *3.0/(pow(items.c,2))) ; // 静水圧を仮定したp*の分布 
                         pressure.push_back(0) ;
-                        vel_x.push_back(vel_U*1.0) ; vel_y.push_back(0.0) ; vel_z.push_back(0.0) ; 
+                        vel_x.push_back(vel_U) ; vel_y.push_back(0.0) ; vel_z.push_back(0.0) ; 
                         Fx.push_back(0) ; Fy.push_back(0) ; Fz.push_back(0) ;
                         // tau.push_back( 1.0*3.0*(muL+phi[phi.size()-1]*(muH-muL))/rho[rho.size()-1]/pow(items.c,2)/items.dt+0.5) ;
                         tau.push_back( items.nu*3.0/(pow(items.c,2)*items.dt) + 0.5) ;
@@ -210,7 +210,6 @@ int main (void){
     items.nx=0 ; items.ny=0 ; 
     for(i=0;i<divx.size();i++){items.nx+=divx[i];} for(j=0;j<divy.size();j++){items.ny+=divy[j];}
     cout<<"items nx ="<<items.nx<<" items ny="<<items.ny<<endl<<endl;
-    cout<<"number of calculation lattice is "<<items.num_calc<<" wall lattice is "<<rho.size()-items.num_calc<<endl; cout<<""<<endl;
     cout<<"lnum="<<lnum.size()<<endl;
     for(i=0;i<items.nx;i++){for(j=0;j<items.ny;j++){for(l=0;l<items.nz;l++){
         if(lnum[i*items.ny*items.nz+j*items.nz+l]<0){
@@ -228,6 +227,8 @@ int main (void){
     printf("set neighbor wall lattice \n") ;
     set_neibghor_wall(items,lnum,divx,divy,neib,f,g,Fk,pressure,rho,phi,posx,posy,posz,delX,delY,vel_x,vel_y,vel_z) ;
     // hydrostatic_pressure(items,Boussi_flag,neib,pressure,rho,f,posz) ;
+    cout<<"number of calculation lattice is "<<items.num_calc<<" wall lattice is "<<rho.size()-items.num_calc<<endl; cout<<""<<endl;
+    for(i=items.num_calc;i<rho.size();i++){Fx.push_back(0);Fy.push_back(0);Fz.push_back(0);}
     for(i=0;i<items.num_calc;i++){
         for(k=0;k<items.num_velocity;k++){
             float tmp = (vel_x[i]*items.cx[k] + vel_y[i]*items.cy[k] + vel_z[i]*items.cz[k])/pow(items.c,2) ;
@@ -241,7 +242,10 @@ int main (void){
     item.push_back(items.dx) ; item.push_back(items.dt) ; item.push_back(items.c) ; 
     item.push_back(items.nx) ; item.push_back(items.ny) ; item.push_back(items.nz) ; item.push_back(items.num_velocity) ; // 0~6
     item.push_back(items.ratiox) ; item.push_back(items.ratioy) ; item.push_back(items.PFthick) ; // 7~9
+    // num_calc num_wall
     item.push_back(items.num_calc) ; item.push_back(rho.size()-items.num_calc) ;
+    // num_IBM_points IBMdx
+    item.push_back(items.num_IBMpoints) ; item.push_back(Diameter*3.14159/items.num_IBMpoints) ;
     item.push_back(items.nu) ; item.push_back(pow(10,-9)) ; item.push_back(items.sigma) ;
     item.push_back(items.tau) ; item.push_back(items.taus) ;
     // wall function用の変数を準備
@@ -310,13 +314,15 @@ int main (void){
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
         // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; // */
+
         wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1c.size(), d_wall1c, d_w, d_v, d_u, d_Fz, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),1) ;
         wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3c.size(), d_wall3c, d_w, d_v, d_u, d_Fz, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),3) ;
-        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall2c.size(), d_wall2c, d_w, d_u, d_v, d_Fz, d_Fx, d_rho, d_tau, timestep%(items.save_interval/1),2) ;
-        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall4c.size(), d_wall4c, d_w, d_u, d_v, d_Fz, d_Fx, d_rho, d_tau, timestep%(items.save_interval/1),4) ; // */
+        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall2c.size(), d_wall2c, d_u, d_v, d_w, d_Fx, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),2) ;
+        wall_functionc <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall4c.size(), d_wall4c, d_u, d_v, d_w, d_Fx, d_Fy, d_rho, d_tau, timestep%(items.save_interval/1),4) ; // */
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
         col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
+        // col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
         IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
@@ -340,16 +346,7 @@ int main (void){
         set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_u, vel_U) ;
         set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_w, 0.00) ;
         set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_v, 0.00) ;
-        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_u, 0.00) ;
-        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_w, 0.00) ;
-        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_v, 0.00) ;
-
-        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallin , d_phi, 1.00) ;
-        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallout, d_phi, 1.00) ;
-        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_pressure, 0.0) ;
-        set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_pressure, 0.0) ;
-        // set_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_neib, 3, items.ny*items.nz, d_wallout, d_pressure) ;
-        // set_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_neib, 1, items.ny*items.nz, d_wallin , d_pressure) ;
+        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_pressure, 0.0) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
 
@@ -398,6 +395,9 @@ int main (void){
                 * cos( atan2(posz[wall1c[i]]-7.0*Diameter,7.0*Diameter-posx[wall1c[i]]) ) ;
                 sum_press += (pressure[wall3c[i]])*pow(items.c,2)*1000.0/3.0 * items.dx*items.dx
                 * cos( atan2(posz[wall3c[i]]-7.0*Diameter,7.0*Diameter-posx[wall3c[i]]) ) ;
+                printf("cos wall1 =%f , wall2 = %f press1 =%f 2 = %f\n",cos( atan2(posz[wall1c[i]]-7.0*Diameter,7.0*Diameter-posx[wall1c[i]]) ),
+                    cos( atan2(posz[wall3c[i]]-7.0*Diameter,7.0*Diameter-posx[wall3c[i]]) ),
+                    pressure[wall1c[i]],pressure[wall3c[i]]) ;
             }
             for(i=0;i<wall2c.size();i++){
                 sum_press -= (Fx[wall2c[i]]+Fx[wall4c[i]])*pow(items.dx,3) ;

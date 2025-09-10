@@ -1,6 +1,39 @@
 
 #include "../all.hpp"
 
+__device__ float profile_s22(float limit_lenght, float distance, float Rada){
+    float r = distance, in_line, out_line ; limit_lenght = 0.1 ;
+    in_line  = 1.0-limit_lenght + powf(limit_lenght/2,2) ;
+    out_line = 1.0+limit_lenght + powf(limit_lenght/2,2) ;
+    float result =    (0 * ( out_line < r)) 
+                    + (0.5*(sin(3.14159*r/limit_lenght/Rada) + 1.0) * ( in_line <= r && r<= out_line)) 
+                    + (1.0 * (r < in_line)) ;
+    return result ;
+}
+__global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS, float *posB, float *f, float *tau, float *posx, float *posy, float *posz, float *velx, float *vely, float *velz, float *velB){
+    // smoothed-profile method
+    int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
+    int id_f = id_rho * (int)items[IDX_Q] ;
+    if(id_rho<items[IDX_num_calc]){
+        float X1, Y1, Z1 ;
+        X1 = (posx[id_rho]-posB[0]) ; Y1 = (posy[id_rho]-posB[1]) ; Z1 = (posz[id_rho]-posB[2]) ;
+        float distance = powf(X1/Rada,2) + powf(Y1/Rada,2) + powf(Z1/Radb,2), fx, fy, fz ; 
+        fx = profile_s22(items[IDX_dz]/Rada,distance,Rada) * (velB[0] - velx[id_rho])/items[IDX_dt] ;
+        fy = profile_s22(items[IDX_dz]/Rada,distance,Rada) * (velB[1] - vely[id_rho])/items[IDX_dt] ;
+        fz = profile_s22(items[IDX_dz]/Rada,distance,Rada) * (velB[2] - velz[id_rho])/items[IDX_dt] ;
+        velx[id_rho]= 0 ; vely[id_rho]= 0 ; velz[id_rho]= 0 ;
+        for(int k =0;k<items[IDX_Q];k++){
+            f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
+            *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
+            velx[id_rho] += f[id_f+k] * items[IDX_cx(k)] ;
+            vely[id_rho] += f[id_f+k] * items[IDX_cy(k)] ;
+            velz[id_rho] += f[id_f+k] * items[IDX_cz(k)] ;
+        }
+        // velx[id_rho] += items[IDX_dt] * fx/2.0 ;
+        // vely[id_rho] += items[IDX_dt] * fy/2.0 ;
+        // velz[id_rho] += items[IDX_dt] * fz/2.0 ;
+    }
+}
 template<typename Typ>
 __global__ void set_wall_boundary1(Typ *items, int wall_number, int *wall, Typ *f, Typ *scolar, Typ *velx, Typ *vely, Typ *velz){
     int id = blockIdx.x * blockDim.x + threadIdx.x ;
@@ -92,9 +125,9 @@ int main (void){
         // if( 0.2<x && 0.9>x ){    // not uniform
         if( 0.24<x && 0.60>x &&i<0){ // uniform
             if( 0.22<x && 0.8>x){
-                divx.push_back(8) ; continue ;
+                divx.push_back(1) ; continue ;
             }
-            divx.push_back(8) ; continue ;
+            divx.push_back(1) ; continue ;
         }
         else{divx.push_back(1);}
     } // */
@@ -351,8 +384,8 @@ int main (void){
 
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
-        // col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
-        col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
+        col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
+        // col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
         IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
@@ -376,12 +409,14 @@ int main (void){
         for(i=0;i<1;i++){
             // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
             // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
-            get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw, rhoH) ;
+            // get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw, rhoH) ;
+            // SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,b_axis,b_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ; //このコードのみに対応
+            IB_directForcing <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
             // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold) ;
             // update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
-            search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
+            // search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
         } //
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
@@ -423,9 +458,6 @@ int main (void){
 
             float sum_press=0 ;
             for(i=0;i<items.num_IBMpoints;i++){
-                // sum_press -= Gw[i] *item[IDX_dIBM] * item[IDX_dIBM] * item[IDX_dIBM] * 1000 ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
-                // sum_press -= Gw[i*3] *item[IDX_dIBM] * item[IDX_dIBM] ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
-                // sum_press -= Gw[i] *item[IDX_dIBM] * item[IDX_dz] * items.dx * 1000 ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
                 sum_press += Gw[i*3] ; 
             }
             F_D = sum_press ;

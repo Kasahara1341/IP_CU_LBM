@@ -37,7 +37,7 @@ rm:
 	-@rm data/*
 	-@rm vtu/*
 	-@rm figure/*
-	-@rm IB_point
+	-@rm IB_point/*
 rmR:
 	-@rm make_result/1_*.csv
 	-@rm make_result/interface*.png

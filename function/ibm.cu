@@ -140,7 +140,7 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
             idfIndex[2][0][0]=22 ; idfIndex[2][0][1]=8  ; idfIndex[2][0][2]=21 ; idfIndex[2][1][0]=12 ; idfIndex[2][1][1]=1 ; idfIndex[2][1][2]=11 ; idfIndex[2][2][0]=20 ; idfIndex[2][2][1]=7  ; idfIndex[2][2][2]=19 ; 
         }
         Typ coeffx[3], coeffy[3], coeffz[3] ;
-        Typ fw[27]={0}, fw1[27]={0}, fw2[27]={0} ;
+        Typ fw[27]={0} ,fw1[27] ,fw2[27] ;
         Typ u_w=velw[id_rho*3+0], v_w=velw[id_rho*3+1], w_w=velw[id_rho*3+2] ;
         // coeffx[0] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+3]]) ;
         // coeffx[1] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]]) ;
@@ -216,7 +216,9 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
                 // printf("fw1 [%d]  fw2 [%d] \n",(0 < tmp && tmp <= tmp2),(-tmp2 <= tmp && tmp < 0)) ;
             // }
         }
-
+        if(id_rho==0){
+            // printf("check u_u=%f v=%f w=%f \n",u_w,v_w,w_w) ;
+        }
 
         Typ sigma_x=0, sigma_y=0, sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma x
@@ -279,6 +281,76 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
     }
 }
 
+__global__ void IB_directForcing(float *items, int *lattice_id, int *neib, float *posx, float *posy, float *posz, float *posw,
+    float *velx, float *vely, float *velz, float *velw, float *Fx, float *Fy, float *Fz, float *Gw){
+    int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id_rho<items[IDX_num_IBPoints]){
+        int num_point =3, idfIndex[3][3][3]={0} ; 
+        if(items[IDX_Q]==9){
+            idfIndex[0][1][2]=6 ; idfIndex[1][1][2]=2 ; idfIndex[2][1][2]=5 ;
+            idfIndex[0][1][1]=3 ; idfIndex[1][1][1]=0 ; idfIndex[2][1][1]=1 ;
+            idfIndex[0][1][0]=5 ; idfIndex[1][1][0]=4 ; idfIndex[2][1][0]=8 ;
+        }
+        if(items[IDX_Q]==27){
+            idfIndex[0][0][0]=26 ; idfIndex[0][0][1]=10 ; idfIndex[0][0][2]=25 ; idfIndex[0][1][0]=14 ; idfIndex[0][1][1]=3 ; idfIndex[0][1][2]=13 ; idfIndex[0][2][0]=24 ; idfIndex[0][2][1]=9  ; idfIndex[0][2][2]=23 ; 
+            idfIndex[1][0][0]=18 ; idfIndex[1][0][1]=4  ; idfIndex[1][0][2]=17 ; idfIndex[1][1][0]=6  ; idfIndex[1][1][1]=0 ; idfIndex[1][1][2]=5  ; idfIndex[1][2][0]=16 ; idfIndex[1][2][1]=2  ; idfIndex[1][2][2]=15 ; 
+            idfIndex[2][0][0]=22 ; idfIndex[2][0][1]=8  ; idfIndex[2][0][2]=21 ; idfIndex[2][1][0]=12 ; idfIndex[2][1][1]=1 ; idfIndex[2][1][2]=11 ; idfIndex[2][2][0]=20 ; idfIndex[2][2][1]=7  ; idfIndex[2][2][2]=19 ; 
+        }
+        float coeffx[3], coeffy[3], coeffz[3] ;
+        float u_w[3]={0} ;
+        float posl_x[3] ;
+        posl_x[0] = posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+3]] ;
+        posl_x[1] = posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]] ;
+        posl_x[2] = posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+1]] ;
+        Lagrange_interpolation<float>(coeffx, posl_x, posw[id_rho*3+0], num_point) ;
+        if(items[IDX_Q]==27){
+            posl_x[0] = posy[neib[lattice_id[id_rho]*(int)items[IDX_Q]+4]] ; 
+            posl_x[1] = posy[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]] ; 
+            posl_x[2] = posy[neib[lattice_id[id_rho]*(int)items[IDX_Q]+2]] ;
+            Lagrange_interpolation<float>(coeffy, posl_x, posw[id_rho*3+1], num_point) ;
+            posl_x[0] = posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+6]] ; 
+            posl_x[1] = posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]] ; 
+            posl_x[2] = posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+5]] ;
+            Lagrange_interpolation<float>(coeffz, posl_x, posw[id_rho*3+2], num_point) ; 
+        }
+        else{
+            coeffy[0]=0;coeffy[1]=1;coeffy[2]=0;
+            posl_x[0] = posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+4]] ;
+            posl_x[1] = posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]] ;
+            posl_x[2] = posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+2]] ;
+            Lagrange_interpolation<float>(coeffz, posl_x, posw[id_rho*3+2], num_point) ;
+        }
+        for(int i=0; i<num_point; i++){
+            for(int j=0 + (items[IDX_Q]==9); j<num_point - (items[IDX_Q]==9); j++){
+                for(int l=0;l<num_point;l++){
+                    int id=neib[lattice_id[id_rho]*(int)items[IDX_Q]+idfIndex[i][j][l]] ;               
+                    u_w[0] += coeffx[i]*coeffy[j]*coeffz[l] * velx[id] * (id<items[IDX_num_calc]) ;
+                    u_w[1] += coeffx[i]*coeffy[j]*coeffz[l] * vely[id] * (id<items[IDX_num_calc]) ;
+                    u_w[2] += coeffx[i]*coeffy[j]*coeffz[l] * velz[id] * (id<items[IDX_num_calc]) ;
+                }
+            }
+        }
+        float gw[3]={0} ;
+        for(int i=0;i<3;i++){
+            gw[i] += (velw[id_rho*3+i]-u_w[i])/items[IDX_dt] ;
+        }
+        int dimension=3 ; if(items[IDX_Q]==9){dimension=2;}
+        for(int i=0; i<num_point; i++){
+            for(int j=0 + (items[IDX_Q]==9); j < num_point - (items[IDX_Q]==9) ; j++){
+                for(int l=0;l<num_point;l++){
+                    int id=neib[lattice_id[id_rho]*(int)items[IDX_Q]+idfIndex[i][j][l]] ;
+                    atomicAdd(&Fx[id], gw[0]*powf(items[IDX_dIBM]/items[IDX_dz],dimension-1)*3.0/powf(items[IDX_c],2)*coeffx[i]*coeffy[j]*coeffz[l] *(id<items[IDX_num_calc]) ) ;
+                    atomicAdd(&Fy[id], gw[1]*powf(items[IDX_dIBM]/items[IDX_dz],dimension-1)*3.0/powf(items[IDX_c],2)*coeffx[i]*coeffy[j]*coeffz[l] *(id<items[IDX_num_calc]) ) ;
+                    atomicAdd(&Fz[id], gw[2]*powf(items[IDX_dIBM]/items[IDX_dz],dimension-1)*3.0/powf(items[IDX_c],2)*coeffx[i]*coeffy[j]*coeffz[l] *(id<items[IDX_num_calc]) ) ;
+                }
+            }
+        }
+        for(int i=0;i<3;i++){
+            Gw[id_rho*3+i] += - gw[i]*1000 * powf(items[IDX_dIBM],dimension-1)*items[IDX_dz] ;
+        }
+    }
+}
+
 template<typename Typ>
 __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Typ *pressure, Typ *tau, Typ *velx, Typ *vely, Typ *velz, Typ *velx_old, Typ *vely_old, Typ *velz_old, Typ *Fx, Typ *Fy, Typ *Fz){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
@@ -286,17 +358,17 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
         int id_f = id_rho * (int)items[IDX_Q] ;
         pressure[id_rho]=0 ; velx[id_rho] = 0 ; vely[id_rho] = 0 ; velz[id_rho] = 0 ; 
         for(int k =0;k<items[IDX_Q];k++){
-            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho])* items[IDX_w(k)]*items[IDX_dt]*
+            f[id_f+k] = f[id_f+k] + (1.0-0.5/tau[id_rho]*0)* items[IDX_w(k)]*items[IDX_dt]*
                 (items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho])  ;
             pressure[id_rho]+= f[id_f+k] ;
             velx[id_rho]+=items[IDX_cx(k)]*f[id_f+k] ;
             vely[id_rho]+=items[IDX_cy(k)]*f[id_f+k] ;
             velz[id_rho]+=items[IDX_cz(k)]*f[id_f+k] ;
         } // */
-        velx[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fx[id_rho]/2.0 ;
-        vely[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fy[id_rho]/2.0 ;
-        velz[id_rho] += powf(items[IDX_c],2)*items[IDX_dt] * Fz[id_rho]/2.0 ;
-        // Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
+        // velx[id_rho] += powf(items[IDX_c],2)*items[IDX_dt]/3.0 * Fx[id_rho]/2.0 ;
+        // vely[id_rho] += powf(items[IDX_c],2)*items[IDX_dt]/3.0 * Fy[id_rho]/2.0 ;
+        // velz[id_rho] += powf(items[IDX_c],2)*items[IDX_dt]/3.0 * Fz[id_rho]/2.0 ;
+        Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
     }
 }
 
