@@ -97,7 +97,7 @@ def main():
     total_count=len(files)
     with Pool(cpu_count()) as pool:
         pool.map(process_file, range(total_count))
-        # pool.map(process_file, range(1))
+        # pool.map(process_file, [25])
 
 if __name__ == "__main__":
     main()

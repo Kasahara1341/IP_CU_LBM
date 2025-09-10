@@ -10,14 +10,7 @@ OBJ_DIR = ../library
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cu)
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cu, $(OBJ_DIR)/%.o, $(SRC_FILES))
 
-low:
-	-@rm lib.a a.out
-	ar r lib.a ../library/*
-	nvcc Karman_vortex2D.cu lib.a -arch=sm_$(arch) -rdc=true
-	./a.out
-	# python3 make_figure.py
-	python3 C_D.py
-	# python3 make_VTK.py
+
 xz:
 	-@rm lib.a a.out
 	ar r lib.a ../library/*
@@ -26,6 +19,15 @@ xz:
 	# python3 make_figure.py
 	python3 C_D.py
 	# python3 make_VTK.py
+low:
+	-@rm lib.a a.out
+	ar r lib.a ../library/*
+	nvcc Karman_vortex2D.cu lib.a -arch=sm_$(arch) -rdc=true
+	./a.out
+	# python3 make_figure.py
+	python3 C_D.py
+	# python3 make_VTK.py
+
 precomp:
 	-@rm ../library/*.o
 comp: $(OBJ_FILES)

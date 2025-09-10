@@ -12,16 +12,16 @@ __global__ void set_f_ftmp(Typ *items, Typ *f, Typ *ftmp){
     }
 }
 template<typename Typ>
-void out_x_H(const vector<Typ>& x_H, const vector<Typ>& C_time, const char *filename){
-    // string filename = "x_H.csv" ;
+void out_z_H(const vector<Typ>& z_H, const vector<Typ>& C_time, const char *filename){
+    // string filename = "z_H.csv" ;
     ofstream ofs(filename) ;
     if(!ofs){cout<<"cannot open file "<<filename<<endl; exit(1);}
-    ofs<<"x_H,y_H"<<endl ;
-    for(int i=0;i<x_H.size();i++){
-        ofs<<x_H[i]<<","<<C_time[i]<<endl ;
+    ofs<<"z_H,x_H"<<endl ;
+    for(int i=0;i<z_H.size();i++){
+        ofs<<z_H[i]<<","<<C_time[i]<<endl ;
     }
     ofs.close() ;
-} // output x_H
+} // output z_H
 
 int main (void){
 
@@ -32,7 +32,7 @@ int main (void){
     vector<float> tau, taus ;
     vector<float> item ;
     Items items ; input_items(items,"./input/initial") ; 
-    {float ny=items.ny; items.nz=items.ny ; items.ny=1 ; items.num_velocity=9;}
+    // {float ny=items.ny; items.nz=items.ny ; items.ny=1 ; items.num_velocity=9;}
     items.PFthick = 3.5*items.dx ; items.sigma = 0.072 *0;
     string Boussinesq_approxi = "on" ; 
     bool Boussi_flag = (strcmp(Boussinesq_approxi.c_str(),"on") ==0) ;
@@ -40,7 +40,7 @@ int main (void){
     vector<float> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
     M_inv((int)pow(items.num_velocity,2)), S(items.num_velocity) ;
     set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
-    vector<float> vecx_H, vecy_H, vec_theta ;
+    vector<float> vecz_H, vecx_H, vec_theta ;
 
     float H_axis = 0.004 , 
     a_axis = H_axis/8.0 ,b_axis = H_axis/16.0 ;
@@ -55,8 +55,8 @@ int main (void){
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.dt/=1.0 ;
-    items.save_interval = 1.0/items.dt ; items.total_count= 1.0/items.dt ;
-    items.save_interval = items.total_count/100 ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 0.4/items.dt ;
+    items.save_interval = items.total_count/20 ;
     // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
@@ -205,9 +205,9 @@ int main (void){
     vector<float> posw, Gw, velw, onB_vec, nB_vec ;
     // decide IB infomation
     num_IBMpoints.push_back(items.num_IBMpoints) ;
-    posB.push_back(2.50*H_axis) ; 
+    posB.push_back(0.5*H_axis) ; 
     posB.push_back(items.dx*items.ny/2.0) ; 
-    posB.push_back(0.5*H_axis) ;
+    posB.push_back(2.5*H_axis) ;
     quaternion.push_back(1); 
     for(i=0;i<3;i++){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
@@ -326,8 +326,8 @@ int main (void){
     //////////////////////////////////////////////////////////////////////////////////////////////////
     output(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,0,items.save_interval) ;
     IB_csv(0,item, posw, velw, Gw) ;
-    vecx_H.push_back(posB[0]/(H_axis)-2.5) ; 
-    vecy_H.push_back(posB[2]/(H_axis)) ;
+    vecz_H.push_back(posB[2]/(H_axis)-2.5) ; 
+    vecx_H.push_back(posB[0]/(H_axis)) ;
     printf("start main calculation \n");
     int blockSize = 64;
     int numBlocks = (rho.size() + blockSize - 1) / blockSize ;     
@@ -412,9 +412,9 @@ int main (void){
             for(i=0;i<3;i++){
                 printf("%f  %f  %f  %f\n",posB[i],velB[i],Torque[i]*100000,FB[i]);
             }
-            float x_H=(posB[0]/(H_axis)-2.5), y_H=posB[2]/(H_axis) ; 
-            // cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Stokes Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 4*pow(a_axis,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
-            cout<<" x/H= "<<x_H<<" y/H= "<<1-y_H<< " Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 
+            float z_H=(posB[2]/(H_axis)-2.5), x_H=posB[0]/(H_axis) ; 
+            // cout<<" x/H= "<<z_H<<" y/H= "<<x_H<< "  Stokes Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 4*pow(a_axis,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
+            cout<<" x/H= "<<z_H<<" y/H= "<<x_H<< " Re= "<<velB[2]*2*a_axis/items.nu <<" exact Re= "<< 
             0.233*pow(a_axis,2)/items.nu * pow( pow(9.81*(densB[0]-1000)/1000,2) /items.nu  ,1/3.0) <<"\n"
             // << " Potential energy = "<< -massB[0]*9.81*posB[0] <<" Momentum energy ="<< massB[0]*(pow(velB[0],2) + pow(velB[1],2) + pow(velB[2],2))/2.0
             // << " Total energy ="<< -massB[0]*9.81*posB[0] + massB[0]*(pow(velB[0],2)+pow(velB[1],2)+pow(velB[2],2))/2.0 
@@ -422,15 +422,15 @@ int main (void){
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
             cout<<"Q0= "<<quaternion[0]<<"  Q2= "<< quaternion[2]<<" theta "<<2 * atan2(quaternion[2],quaternion[0])*180/3.141592<<
                 " norm = "<<pow(quaternion[0],2)+pow(quaternion[2],2)+pow(quaternion[1],2)+pow(quaternion[3],2)<<   endl;
-            vecx_H.push_back(x_H) ; vecy_H.push_back(1-y_H) ; vec_theta.push_back(2 * atan2(quaternion[2],quaternion[0])*180/3.141592) ;
+            vecz_H.push_back(z_H) ; vecx_H.push_back(x_H) ; vec_theta.push_back(2 * atan2(quaternion[2],quaternion[0])*180/3.141592) ;
 
         }
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ; 
     }
 
-    out_x_H(vecx_H, vecy_H,"x_H.csv") ;
-    out_x_H(vecx_H, vec_theta,"x_theta.csv") ;
+    out_z_H(vecz_H, vecx_H,"z_H.csv") ;
+    out_z_H(vecz_H, vec_theta,"x_theta.csv") ;
     cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<tau[0]<<endl;
     cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;

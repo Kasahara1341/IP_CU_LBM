@@ -79,10 +79,10 @@ int main (void){
     // divide x, y direction
     for(i=0;i<items.nx;i++){
         float x = (i+0.5)*items.dx*items.ratiox ;
-        // if( 0.2<x && 0.9>x ){    // not uniform
-        if( 0.24<x && 0.60>x &&i<0){ // uniform
-            if( 0.22<x && 0.8>x){
-                divx.push_back(8) ; continue ;
+        if( 0.02<x && 0.105>x ){    // not uniform
+        // if( 0.24<x && 0.60>x &&i<0){ // uniform
+            if( 0.03<x && 0.095>x){
+                divx.push_back(4) ; continue ;
             }
             divx.push_back(2) ; continue ;
         }
@@ -92,10 +92,10 @@ int main (void){
     // divide x, y direction
     for(i=0;i<items.ny;i++){
         float y = (i+0.5)*items.dx*items.ratioy ;
-        // if( 0.21<y && 0.63>y ){ // not uniform
-        if( 0.24<y && 0.60>y &&i<0){ // uniform
-            if( 0.26<y && 0.58>y){
-                divy.push_back(8) ; continue ;
+        if( 0.02<y && 0.105>y ){ // not uniform
+        // if( 0.24<y && 0.60>y &&i<0){ // uniform
+            if( 0.03<y && 0.095>y){
+                divy.push_back(4) ; continue ;
             }
             divy.push_back(2) ; continue ;
             // divx.push_back(1) ;
@@ -217,9 +217,9 @@ int main (void){
     items.num_IBMpoints = oposw.size()/3 ;
     // decide IB infomation
     num_IBMpoints.push_back(items.num_IBMpoints) ;
-    posB.push_back(5*Radius) ; 
     posB.push_back(0.5*H_axis) ; 
     posB.push_back(0.5*H_axis) ;
+    posB.push_back(5*Radius) ; 
     quaternion.push_back(1); 
     for(i=0;i<3;i++){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
@@ -420,11 +420,11 @@ int main (void){
             for(i=0;i<3;i++){
                 printf("%f  %f  %f  %f\n",posB[i],velB[i],Torque[i],FB[i]);
             }
-            vec_velwx.push_back(velB[0]) ; vec_time.push_back(timestep*items.dt) ;
-            float x_H=posB[0]/(H_axis), y_H=posB[1]/(H_axis), exact_Re=4*pow(Radius,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) ; 
-            cout<<" x/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< 800*pow(Radius,3)*9.81/(9.0*items.nu) <<endl;
-            cout<<" exact u= "<< 2*pow(Radius,2)*(densB[0]-1000)*9.81/(9*items.nu*1000) << "  Re= "<<velB[0]*2*Radius/items.nu <<" exact Re= "<< exact_Re << "error = "<<
-            (velB[0]*2*Radius/items.nu - exact_Re) / exact_Re * 100<<" %"<<endl;
+            vec_velwx.push_back(velB[2]) ; vec_time.push_back(timestep*items.dt) ;
+            float x_H=posB[2]/(H_axis), y_H=posB[1]/(H_axis), exact_Re=4*pow(Radius,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) ; 
+            cout<<" z/H= "<<x_H<<" y/H= "<<y_H<< "  Re= "<<velB[2]*2*Radius/items.nu <<" exact Re= "<< exact_Re
+            <<" exact u= "<< 2*pow(Radius,2)*(densB[0]-1000)*9.81/(9*items.nu*1000) << "error = "<<
+            (velB[2]*2*Radius/items.nu - exact_Re) / exact_Re * 100<<" %"<<endl;
             vecx_H.push_back(x_H) ; vecy_H.push_back(y_H) ;
 
             cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;

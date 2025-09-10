@@ -323,8 +323,7 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             Torque[IB_index*3+1] += (posw[i*3+2]-posB[IB_index*3+2])*Gw[i*3+0] - (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+2] ;
             Torque[IB_index*3+2] += (posw[i*3+0]-posB[IB_index*3+0])*Gw[i*3+1] - (posw[i*3+1]-posB[IB_index*3+1])*Gw[i*3+0] ;
         }
-        FB[IB_index*3+0] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
-        // FB[IB_index*3+2] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
+        FB[IB_index*3+2] += (1.0-rhof/densB[IB_index])*massB[IB_index]*9.81 ;
         
         // Finalyze FB & update velocity of IB_body
         for(int i=0;i<3;i++){

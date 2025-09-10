@@ -351,8 +351,8 @@ int main (void){
 
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
-        col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
-        // col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
+        // col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
+        col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
         IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
