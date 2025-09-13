@@ -121,13 +121,14 @@ int main (void){
 
     // divide x, y direction
     for(i=0;i<items.nx;i++){
-        float x = (i+0.5)*items.dx*items.ratiox ;
-        // if( 0.2<x && 0.9>x ){    // not uniform
-        if( 0.24<x && 0.60>x &&i<0){ // uniform
-            if( 0.22<x && 0.8>x){
-                divx.push_back(1) ; continue ;
+        int n = 10, m = 1 ;
+        float x = (i+0.5)*items.dx*items.ratiox/Diameter ;
+        if( (40-2*m-n)/2 -4 <x && 40-(40-2*m-n)/2 + 4>x ){    // not uniform
+        // if( 0.24<x && 0.60>x &&i<0){ // uniform
+            if( (40-n)/2 - 4<x && (40-n)/2 - 4 + n >x){
+                divx.push_back(8) ; continue ;
             }
-            divx.push_back(1) ; continue ;
+            divx.push_back(4) ; continue ;
         }
         else{divx.push_back(1);}
     } // */
@@ -245,9 +246,9 @@ int main (void){
     float a_axis = Diameter/2.0 ,b_axis = Diameter/2.0 ;
     // decide IB infomation
     num_IBMpoints.push_back(items.num_IBMpoints) ;
-    posB.push_back(0.42) ; 
+    posB.push_back(16*Diameter) ; 
     posB.push_back(items.dx*items.ny/2.0) ; 
-    posB.push_back(0.42) ;
+    posB.push_back(20*Diameter) ;
     quaternion.push_back(1); 
     for(i=0;i<3;i++){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
@@ -409,9 +410,9 @@ int main (void){
         for(i=0;i<1;i++){
             // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
             // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
-            // get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw, rhoH) ;
             // SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,b_axis,b_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ; //このコードのみに対応
-            IB_directForcing <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw) ;
+            get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw, rhoH) ;
+            // IB_directForcing <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
             // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold) ;

@@ -66,11 +66,11 @@ __global__ void set_velocity1(Typ *items, int wall_number, int *wall, Typ *velx,
 // }
 
 template<typename Typ>
-void set_wall_cylinder(const vector<Typ>& items, const vector<int>& neib, vector<Typ>& posx, vector<Typ>& posy, vector<int>& wall1, vector<int>& wall2, vector<int>& wall3, vector<int>& wall4, vector<int>& wall5, vector<int>& wall6){
+void set_wall_cylinder(const vector<Typ>& items, const Typ Diameter, const vector<int>& neib, vector<Typ>& posx, vector<Typ>& posy, vector<int>& wall1, vector<int>& wall2, vector<int>& wall3, vector<int>& wall4, vector<int>& wall5, vector<int>& wall6){
     int i ;
     int dir1=1, dir2=2, dir3=3, dir4=4 ;
     for(i=0;i<items[IDX_num_calc];i++){
-        if(0.3<posx[i] && 0.7>posx[i] && 0.3<posy[i] && 0.7>posy[i]){
+        if(13*Diameter <posx[i] && 19*Diameter>posx[i] && 17*Diameter<posy[i] && 23*Diameter>posy[i]){
             if(neib[i*(int)items[IDX_Q]+dir1]>=(int)items[IDX_num_calc]){ wall1.push_back(i) ;}
             if(neib[i*(int)items[IDX_Q]+dir2]>=(int)items[IDX_num_calc]){ wall2.push_back(i) ;}
             if(neib[i*(int)items[IDX_Q]+dir3]>=(int)items[IDX_num_calc]){ wall3.push_back(i) ;}
@@ -131,13 +131,14 @@ int main (void){
 
     // divide x, y direction
     for(i=0;i<items.nx;i++){
-        float x = (i+0.5)*items.dx*items.ratiox ;
-        // if( 0.2<x && 0.9>x ){    // not uniform
-        if( 0.24<x && 0.60>x &&i<0){ // uniform
-            if( 0.22<x && 0.8>x){
-                divx.push_back(1) ; continue ;
+        int n = 10, m = 1 ;
+        float x = (i+0.5)*items.dx*items.ratiox/Diameter ;
+        if( (40-2*m-n)/2 -4 <x && 40-(40-2*m-n)/2 + 4>x ){    // not uniform
+        // if( 0.24<x && 0.60>x &&i<0){ // uniform
+            if( (40-n)/2 - 4<x && (40-n)/2 - 4 + n >x){
+                divx.push_back(8) ; continue ;
             }
-            divx.push_back(1) ; continue ;
+            divx.push_back(4) ; continue ;
         }
         else{divx.push_back(1);}
     } // */
@@ -159,7 +160,7 @@ int main (void){
                         float x = ( i + (2.0*divi+1.0)/(2.0*divx[i]) )*items.dx*items.ratiox ;
                         float y = ( j + (2.0*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ;
                         float z = ( l + 0.5 )*items.dx ;
-                        if(0+ pow(x-0.42,2) + pow(z-0.42,2) > pow(0.03,2) ){
+                        if(0+ pow(x-16*Diameter,2) + pow(z-20*Diameter,2) > pow(0.03,2) ){
                             lnum.push_back(items.num_calc) ;
                             items.num_calc+=1 ;
                         }
@@ -254,7 +255,7 @@ int main (void){
     item.push_back(wall1.size()) ; item.push_back(wall2.size()) ; item.push_back(wall3.size()) ; 
     item.push_back(wall4.size()) ; item.push_back(wall5.size()) ; item.push_back(wall6.size()) ;  
     vector<int> wall1c, wall2c, wall3c, wall4c, wall5c, wall6c ; // wall of cylinder
-    set_wall_cylinder(item, neib, posx, posz, wall1c, wall2c, wall3c, wall4c, wall5c, wall6c) ;
+    set_wall_cylinder(item, Diameter, neib, posx, posz, wall1c, wall2c, wall3c, wall4c, wall5c, wall6c) ;
     vector<int> wallin, wallout ;
     for(j=0;j<items.ny*items.nz*wall_b_number;j++){
         wallin.push_back(j) ; wallout.push_back(items.num_calc-items.ny*items.nz*wall_b_number+j) ;
@@ -323,30 +324,16 @@ int main (void){
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
         col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
         // col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
-        IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // 0 => slip ; 1 => bounce back noslip
+        // 0 => slip ; 1 => bounce back noslip
+        IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; 
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
 
-        // salinity 
-        /*col_g_reg     <float> <<<numBlocks, blockSize>>>(d_items, d_taus, d_g, d_ftmp, d_feq, d_sal, d_u, d_v, d_w) ;
-        IP_process(d_items,numBlocks,blockSize,d_neib,d_g,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // */
-        // Phase Field
-        /*col_PF        <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_taus, d_g, d_ftmp, d_feq, d_phi, d_u, d_v, d_w, d_phiold, d_uold, d_vold, d_wold, d_posx, d_posy, d_posz) ;
-        IP_process(d_items,numBlocks,blockSize,d_neib,d_g,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // */
-        // set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallin , d_g, d_phi, d_u, d_v, d_w) ;
-        // set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallout, d_g, d_phi, d_u, d_v, d_w) ;
-        
-        // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_sal) ;
-        // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_phi) ;
         update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_u, d_v, d_w) ; 
         // LES           <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
-        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
-        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
-        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_u) ;  set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_v) ; set_wall_rho<float><<<numBlocks, blockSize>>>(d_items, d_neib, d_w) ;
         set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_u, vel_U) ;
         set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_w, 0.00) ;
         set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin, d_v, 0.00) ;
-        // set_velocity1 <float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_pressure, 0.0) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallin , d_f, d_pressure, d_u, d_v, d_w) ;
         set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz*wall_b_number, d_wallout, d_f, d_pressure, d_u, d_v, d_w) ;
 
@@ -374,30 +361,15 @@ int main (void){
             if(isnan(vel_x[items.ny*items.nz*5])!=0){
                 cout<<"######################################"<<endl<<"Not a number is detected !"
                 <<endl<<"######################################"<<endl; break;} // check NAN
-            /*cudaMemcpy(f.data()  , d_f, f.size()   * sizeof(float),cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(Fk.data()  , d_Fk, Fk.size()   * sizeof(float),cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(g.data()  , d_f, g.size()   * sizeof(float),cudaMemcpyDeviceToHost) ;
-            // cudaMemcpy(rho.data(), d_rho , rho.size() * sizeof(float),cudaMemcpyDeviceToHost) ;
-            i=600 ; j=700 ; 
-            cout<<"clac rho="<<phi[i] <<" wall rho="<<phi[j] << endl;
-            cout << "i="<<i <<" "<<neib[i*items.num_velocity]<< " neib[3]="<<neib[i*items.num_velocity+3]<< " calcid="<<neib[j*items.num_velocity]<<endl;
-            cout<<" vel[600]="<<vel_y[i]<<" vel[700]="<<vel_y[j]<<endl;
-            for(k=0;k<items.num_velocity;k++){
-                // cout<<"i="<<i<<" g["<<k<<"]="<<g[i*items.num_velocity+k]<<" j="<<j<<" g="<<g[j*items.num_velocity+k]<< endl;
-                // cout<<"i="<<j<<" g["<<k<<"]="<<g[j*items.num_velocity+k]<< endl;
-                // cout << "i="<<i <<" "<<neib[i*items.num_velocity]<< " neib["<<k<<"]="<<neib[i*items.num_velocity+k]<<endl;
-                cout << "i="<<i <<" "<<"nextB["<<k<<"]="<<nextB[i*items.num_velocity+k]<<" nextK["<<k<<"]="<<nextK[i*items.num_velocity+k]<<endl;
-                // cout<<neib[i*items.num_velocity+k]<<endl;
-            } // */
             double sum_press=0 ;
             for(i=0;i<wall1c.size();i++){
-                sum_press += (pressure[wall1c[i]])*pow(items.c,2)*1000.0/3.0 * items.dx*items.dx
-                * cos( atan2(posz[wall1c[i]]-7.0*Diameter,7.0*Diameter-posx[wall1c[i]]) ) ;
-                sum_press += (pressure[wall3c[i]])*pow(items.c,2)*1000.0/3.0 * items.dx*items.dx
-                * cos( atan2(posz[wall3c[i]]-7.0*Diameter,7.0*Diameter-posx[wall3c[i]]) ) ;
-                printf("cos wall1 =%f , wall2 = %f press1 =%f 2 = %f\n",cos( atan2(posz[wall1c[i]]-7.0*Diameter,7.0*Diameter-posx[wall1c[i]]) ),
-                    cos( atan2(posz[wall3c[i]]-7.0*Diameter,7.0*Diameter-posx[wall3c[i]]) ),
-                    pressure[wall1c[i]],pressure[wall3c[i]]) ;
+                sum_press += (pressure[wall1c[i]])*pow(items.c,2)*1000.0/3.0 * items.dx*items.dx ;
+                // * cos( atan2(posz[wall1c[i]]-7.0*Diameter,7.0*Diameter-posx[wall1c[i]]) ) ;
+                sum_press -= (pressure[wall3c[i]])*pow(items.c,2)*1000.0/3.0 * items.dx*items.dx ;
+                // * cos( atan2(posz[wall3c[i]]-7.0*Diameter,7.0*Diameter-posx[wall3c[i]]) ) ;
+                // printf("cos wall1 =%f , wall2 = %f press1 =%f 2 = %f\n",cos( atan2(posz[wall1c[i]]-7.0*Diameter,7.0*Diameter-posx[wall1c[i]]) ),
+                    // cos( atan2(posz[wall3c[i]]-7.0*Diameter,7.0*Diameter-posx[wall3c[i]]) ),
+                    // pressure[wall1c[i]],pressure[wall3c[i]]) ;
             }
             for(i=0;i<wall2c.size();i++){
                 sum_press -= (Fx[wall2c[i]]+Fx[wall4c[i]])*pow(items.dx,3) ;

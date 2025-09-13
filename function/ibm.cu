@@ -197,48 +197,39 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
                 }
             }
         }
-        // int check_id = 5 ; if(id_rho==check_id){printf("k\n"); }
         Typ alpha = 22.5/180.0*3.14159, beta ;
         for(int k=0;k<items[IDX_Q];k++){
             Typ tmp  = (nBvec[id_rho*3+0]*items[IDX_cx(k)] + nBvec[id_rho*3+1]*items[IDX_cy(k)] + nBvec[id_rho*3+2]*items[IDX_cz(k)])/items[IDX_c] ; // c times n
             Typ tmp2 = sqrtf( powf(items[IDX_cx(k)],2) + powf(items[IDX_cy(k)],2) + powf(items[IDX_cz(k)],2))/items[IDX_c] * sin(alpha) ; // |c|sin(alpha)
             Typ tmp3 = 6.0*items[IDX_w(k)]* (items[IDX_cx(k)]*u_w + items[IDX_cy(k)]*v_w + items[IDX_cz(k)]*w_w)/powf(items[IDX_c],2) ;   // 6EcU
             beta     = fabs(tmp)/(tmp2+powf(10,-10)) ; 
-            tmp2 = 0 ; // 9999
             fw1[k] = (fw[k] * (tmp<=0))
                 + ( ((1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3) ) * (0 < tmp && tmp <= tmp2) )
                 + ( (fw[k_inv[k]] + tmp3 ) * (tmp > tmp2 )) ;
             fw2[k] = (fw[k] * (tmp>=0))
                 + ( ((1.0-beta)*fw[k] + beta*(fw[k_inv[k]]+tmp3) ) * (-tmp2 <= tmp && tmp < 0))
                 + ( (fw[k_inv[k]] + tmp3 ) * (tmp < - tmp2)) ;
-            // if(id_rho==check_id){
-                // printf("k=%d fw=%e fw1=%e fw2=%e  tmp=%e beta=%e |c|sin(alpha)=%f\n",k,fw[k],fw1[k],fw2[k],tmp,beta,tmp2); 
-                // printf("fw1 [%d]  fw2 [%d] \n",(0 < tmp && tmp <= tmp2),(-tmp2 <= tmp && tmp < 0)) ;
-            // }
-        }
-        if(id_rho==0){
-            // printf("check u_u=%f v=%f w=%f \n",u_w,v_w,w_w) ;
         }
 
         Typ sigma_x=0, sigma_y=0, sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma x
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*u_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*u_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*u_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*u_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*u_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*u_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+0] = -(sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2]) ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma y
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*v_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*v_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*v_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*v_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*v_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*v_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+1] = -(sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2]) ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma z
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*w_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*w_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(3*(fw1[k]-fw2[k])-items[IDX_w(k)])*w_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*w_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *0  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*w_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * (fw1[k]-fw2[k]) *1  + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*((fw1[k]-fw2[k])*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(1*(fw1[k]-fw2[k])-items[IDX_w(k)])*w_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+2] = -(sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2])  ;
 
@@ -256,23 +247,23 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
         }
         sigma_x=0, sigma_y=0, sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma x
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(3*fw1[k]-items[IDX_w(k)])*u_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(3*fw1[k]-items[IDX_w(k)])*u_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(3*fw1[k]-items[IDX_w(k)])*u_w*w_w)/powf(items[IDX_c],2) ;
-        }
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cx(k)]-u_w)-(1*fw1[k]-items[IDX_w(k)])*u_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cy(k)]-v_w)-(1*fw1[k]-items[IDX_w(k)])*u_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cx(k)]-u_w)*(items[IDX_cz(k)]-w_w)-(1*fw1[k]-items[IDX_w(k)])*u_w*w_w)/powf(items[IDX_c],2) ;
+        } 
         Gw[id_rho*3+0] = sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2] ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma y
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(3*fw1[k]-items[IDX_w(k)])*v_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(3*fw1[k]-items[IDX_w(k)])*v_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(3*fw1[k]-items[IDX_w(k)])*v_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cx(k)]-u_w)-(1*fw1[k]-items[IDX_w(k)])*v_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cy(k)]-v_w)-(1*fw1[k]-items[IDX_w(k)])*v_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cy(k)]-v_w)*(items[IDX_cz(k)]-w_w)-(1*fw1[k]-items[IDX_w(k)])*v_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+1] = sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2] ;
         sigma_x=0 ; sigma_y=0 ; sigma_z=0 ;
         for(int k=0;k<items[IDX_Q];k++){ // sigma z
-            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(3*fw1[k]-items[IDX_w(k)])*w_w*u_w)/powf(items[IDX_c],2) ;
-            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(3*fw1[k]-items[IDX_w(k)])*w_w*v_w)/powf(items[IDX_c],2) ;
-            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(3*fw1[k]-items[IDX_w(k)])*w_w*w_w)/powf(items[IDX_c],2) ;
+            sigma_x -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cx(k)]-u_w)-(1*fw1[k]-items[IDX_w(k)])*w_w*u_w)/powf(items[IDX_c],2) ;
+            sigma_y -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *0 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cy(k)]-v_w)-(1*fw1[k]-items[IDX_w(k)])*w_w*v_w)/powf(items[IDX_c],2) ;
+            sigma_z -= 0.5/tau[lattice_id[id_rho]] * fw1[k] *1 + (1.0-0.5/tau[lattice_id[id_rho]]) * 3*(fw1[k]*(items[IDX_cz(k)]-w_w)*(items[IDX_cz(k)]-w_w)-(1*fw1[k]-items[IDX_w(k)])*w_w*w_w)/powf(items[IDX_c],2) ;
         }
         Gw[id_rho*3+2] = sigma_x*nBvec[id_rho*3+0] + sigma_y*nBvec[id_rho*3+1] + sigma_z*nBvec[id_rho*3+2] ;
         for(int i=0;i<3;i++){
@@ -368,7 +359,7 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
         // velx[id_rho] += powf(items[IDX_c],2)*items[IDX_dt]/3.0 * Fx[id_rho]/2.0 ;
         // vely[id_rho] += powf(items[IDX_c],2)*items[IDX_dt]/3.0 * Fy[id_rho]/2.0 ;
         // velz[id_rho] += powf(items[IDX_c],2)*items[IDX_dt]/3.0 * Fz[id_rho]/2.0 ;
-        Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
+        // Fx[id_rho]=0 ; Fy[id_rho]=0 ; Fz[id_rho]=0;
     }
 }
 
@@ -403,27 +394,13 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
             posB[IB_index*3+i] += items[IDX_dt]*(3.0*velB[IB_index*3+i]-velBold[i])/2.0 ;
         }
 
-
-        // float ang[3], qua[4] ; 
-            // for(int i=0;i<4;i++){qua[i]=quat[IB_index*4+i];}  for(int i=0;i<3;i++){ang[i]=angleVB[IB_index*3+i];}
-            // quat[IB_index*4+0] += items[IDX_dt]*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3])/2.0 ;
-            // quat[IB_index*4+1] += items[IDX_dt]*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3])/2.0 ;
-            // quat[IB_index*4+2] += items[IDX_dt]*( ang[1]*qua[0] - ang[2]*qua[1] + ang[0]*qua[3])/2.0 ;
-            // quat[IB_index*4+3] += items[IDX_dt]*( ang[2]*qua[0] + ang[1]*qua[1] - ang[0]*qua[2])/2.0 ;
         // update angle velocity 
         for(int i=0;i<3;i++){
             for(int j=0;j<3;j++){
                 angleVB[IB_index*3+i] += items[IDX_dt]
-                *(3.0*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+j]/2.0 ; // original
+                *(3.0*quaS[IB_index*3+j*3+i]*Torque[IB_index*3+j] - quaSold[j*3+i]*Torqueold[j]) /inertia[IB_index*3+i]/2.0 ; // original
             }
         }        
-        // float ang2[3], qua2[4] ; 
-            // for(int i=0;i<4;i++){qua2[i]=quat[IB_index*4+i];}  for(int i=0;i<3;i++){ang2[i]=angleVB[IB_index*3+i];}
-            // quat[IB_index*4+0] = qua[0] + items[IDX_dt]*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3] -  ang2[0]*qua2[1] - ang2[1]*qua2[2] - ang2[2]*qua2[3])/4.0  ;
-            // quat[IB_index*4+1] = qua[1] + items[IDX_dt]*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3] +  ang2[0]*qua2[0] + ang2[2]*qua2[2] - ang2[1]*qua2[3])/4.0  ;
-            // quat[IB_index*4+2] = qua[2] + items[IDX_dt]*( ang[1]*qua[0] - ang[2]*qua[1] + ang[0]*qua[3] +  ang2[1]*qua2[0] - ang2[2]*qua2[1] + ang2[0]*qua2[3])/4.0  ;
-            // quat[IB_index*4+3] = qua[3] + items[IDX_dt]*( ang[2]*qua[0] + ang[1]*qua[1] - ang[0]*qua[2] +  ang2[2]*qua2[0] + ang2[1]*qua2[1] - ang2[0]*qua2[2])/4.0  ;
-
 
         // update Quaternion & Quaternion
         {float ang[3], qua[4] ; 

@@ -71,15 +71,15 @@ int main (void){
 
     float H_axis = 0.1 , Radius ;
     Radius = 0.015/2.0 ;
-    float rhoL=1, rhoH=970.0, muL=1.*pow(10,-5), muH=373.0*pow(10,-3) ;
+    float rhoL=1, rhoH=960.0, muL=1.*pow(10,-5), muH=58.0*pow(10,-3) ;
 
     items.nu = muH / rhoH ;
 
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 2.42/items.dt ;
-    items.save_interval = items.total_count/20 ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 1.25/items.dt ;
+    items.save_interval = items.total_count/50 ;
     // items.total_count=2 ; items.save_interval=2 ;
     cout<<"total count= "<<items.total_count<<" save_interval= "<<items.save_interval<<endl;
     ////////////////////////////////////////////////////////
@@ -211,7 +211,7 @@ int main (void){
     vector<float> oposw ;
 
     // read sphere points from csv file
-    int number_of_division = 16 ;
+    int number_of_division = 10 ;
     {char sphere_file[100] ;
     sprintf(sphere_file,"sphere_points_n%d.csv",number_of_division) ;
     std::ifstream file(sphere_file);
@@ -230,14 +230,14 @@ int main (void){
     num_IBMpoints.push_back(items.num_IBMpoints) ;
     posB.push_back(0.5*H_axis) ; 
     posB.push_back(0.5*H_axis) ;
-    posB.push_back(0.04) ; 
+    posB.push_back(0.04-Radius/2.0) ; 
     quaternion.push_back(1); 
     for(i=0;i<3;i++){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
     }
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1120) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
+    densB.push_back(1120.0) ; massB.push_back(densB[0] * pow(Radius,3) * 4.0/3.0 * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*pow(Radius,2) *2.0/5.0 ) ; 
     IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
 
@@ -388,10 +388,10 @@ int main (void){
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
             // original code
-            update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,d_velw,0.044) ;
+            // update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,d_velw,0.044) ;
 
-            // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
-            // update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
+            update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
+            update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
             search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
         } //
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 

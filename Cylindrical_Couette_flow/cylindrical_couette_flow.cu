@@ -1,6 +1,43 @@
 
 #include "../all.hpp"
 
+__global__ void update_quaternion(float *items, float *angleVB, float *quat, float *quaS){
+    int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id_rho<1){
+        // update Quaternion & Quaternion
+        {float ang[3], qua[4] ; 
+            for(int i=0;i<4;i++){qua[i]=quat[i];}  for(int i=0;i<3;i++){ang[i]=angleVB[i];}
+            quat[0] += items[IDX_dt]*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3])/2.0 ;
+            quat[1] += items[IDX_dt]*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3])/2.0 ;
+            quat[2] += items[IDX_dt]*( ang[1]*qua[0] - ang[2]*qua[1] + ang[0]*qua[3])/2.0 ;
+            quat[3] += items[IDX_dt]*( ang[2]*qua[0] + ang[1]*qua[1] - ang[0]*qua[2])/2.0 ;
+        } // */
+        set_quaternionS(0,quat[0],quat[1],quat[2],quat[3],quaS) ;        
+    }
+}
+
+__global__ void update_IBpos(float *items, int num_IB1, float *posB, float *angleVB, float *quaS, float *posw, float *oposw, float *nBvec, float *onBvec, float *velw){
+    int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
+    if(id_rho<num_IB1){
+        for(int i=0;i<3;i++){
+            posw[id_rho*3+i] = posB[i] ; velw[id_rho*3+i] = 0 ; nBvec[id_rho*3+i] = 0 ;
+            for(int j=0;j<3;j++){
+                posw[id_rho*3+i] += quaS[i*3+j]*oposw[id_rho*3+j] ;
+                nBvec[id_rho*3+i]+= quaS[i*3+j]*onBvec[id_rho*3+j] ;
+            }
+        }
+        velw[id_rho*3+0] += quaS[0*3+0] * (angleVB[1]*oposw[id_rho*3+2] - angleVB[2]*oposw[id_rho*3+1]) 
+                          + quaS[0*3+1] * (angleVB[2]*oposw[id_rho*3+0] - angleVB[0]*oposw[id_rho*3+2]) 
+                          + quaS[0*3+2] * (angleVB[0]*oposw[id_rho*3+1] - angleVB[1]*oposw[id_rho*3+0]) ;
+        velw[id_rho*3+1] += quaS[1*3+0] * (angleVB[1]*oposw[id_rho*3+2] - angleVB[2]*oposw[id_rho*3+1]) 
+                          + quaS[1*3+1] * (angleVB[2]*oposw[id_rho*3+0] - angleVB[0]*oposw[id_rho*3+2]) 
+                          + quaS[1*3+2] * (angleVB[0]*oposw[id_rho*3+1] - angleVB[1]*oposw[id_rho*3+0]) ;
+        velw[id_rho*3+2] += quaS[2*3+0] * (angleVB[1]*oposw[id_rho*3+2] - angleVB[2]*oposw[id_rho*3+1]) 
+                          + quaS[2*3+1] * (angleVB[2]*oposw[id_rho*3+0] - angleVB[0]*oposw[id_rho*3+2]) 
+                          + quaS[2*3+2] * (angleVB[0]*oposw[id_rho*3+1] - angleVB[1]*oposw[id_rho*3+0]) ;
+    }
+}
+
 template<typename Typ>
 __global__ void set_f_ftmp(Typ *items, Typ *f, Typ *ftmp){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
@@ -11,16 +48,7 @@ __global__ void set_f_ftmp(Typ *items, Typ *f, Typ *ftmp){
         }
     }
 }
-template<typename Typ>
-__global__ void update_IBposition(Typ *items, Typ *posB, Typ *posw, Typ vel_U){
-    int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
-    if(id_rho<1){
-        posB[2] += items[IDX_dt] * vel_U ;
-        for(int i=0 ; i<items[IDX_num_IBPoints];i++){
-            posw[i*3+2] += items[IDX_dt] * vel_U ;
-        }
-    }
-}
+
 template<typename Typ>
 void out_C_D(const vector<Typ>& C_D, const vector<Typ>& C_time){
     string filename = "C_D.csv" ;
@@ -49,22 +77,20 @@ int main (void){
     vector<float> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
     M_inv((int)pow(items.num_velocity,2)), S(items.num_velocity) ;
     set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
-    float Re_number = 40.0, Diameter=0.06,  vel_U = 0.01 ; int wall_b_number = 1 ;
-    float F_D ;
-    cout<<" input Re_number to " ;
-    cin >> Re_number ;
-    items.nu = Diameter*vel_U/Re_number ; 
-    if(items.nu<pow(10,-6)){items.nu=pow(10,-6) ; vel_U = Re_number*items.nu/Diameter ;} 
-    cout<< "nu = "<<items.nu<<endl ;
-    // vel_U = Re_number*items.nu/Diameter ; // set velocity from Re_number
-    cout<<"Re_number = "<<Re_number<<" nu = "<<items.nu<<" vel_U = "<<vel_U<<endl ;
-    vector<float> C_D, C_time ;
+    float Re_number = 6.0, Leng = items.nz*items.dx, R1 = Leng/4.8, R2 = Leng/2.4 ; 
+    // cout<<" input Re_number to " ;
+    // cin >> Re_number ;
+    items.nu*=100 ;
+    float vel_theta = items.nu*Re_number/pow(Leng/4.8,2), vel_U = vel_theta*R1  ;
+    
+
+    cout<<"vel_theta = "<<vel_theta<<" vel_U= "<<vel_U<<endl;
 
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.save_interval = 1.0/items.dt ; items.total_count= 200/items.dt ;
-    items.save_interval = items.total_count/40 ;
+    items.save_interval = items.total_count/100 ;
     // items.total_count=20 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
@@ -76,13 +102,9 @@ int main (void){
 
     // divide x, y direction
     for(i=0;i<items.nx;i++){
-        int n = 10, m = 1 ;
-        float x = (i+0.5)*items.dx*items.ratiox/Diameter ;
-        if( 20-m-n/2 <x && 40-(20-m-n/2)>x ){    // not uniform
-        // if( 0.24<x && 0.60>x &&i<0){ // uniform
-            if( 20-n/2 <x && 20 + n/2 >x){
-                divx.push_back(8) ; continue ;
-            }
+        float x = (i+0.5)*items.dx*items.ratiox ;
+        // if( 20-m-n/2 <x && 40-(20-m-n/2)>x ){    // not uniform
+        if( 0.24<x && 0.60>x &&i<0){ // uniform
             divx.push_back(4) ; continue ;
         }
         else{divx.push_back(1);}
@@ -115,7 +137,6 @@ int main (void){
                         float y = ( j + (2.0*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ;
                         float z = ( l + 0.5 )*items.dx ;
                         if(x > 0){
-                        // if(pow(x-0.42,2) + pow(y-0.42,2) > pow(0.03,2) ){
                             lnum.push_back(items.num_calc) ;
                             items.num_calc+=1 ;
                         }
@@ -194,52 +215,53 @@ int main (void){
     }
 
     // set IBM points
-    items.num_IBMpoints = Diameter*3.14159/items.dx ;
+    int num_IB1 = 2*R1*3.141592/items.dx, num_IB2 = 2*R2*3.141592/items.dx ;
+    items.num_IBMpoints = num_IB1 + num_IB2  ;
     vector<float> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
     vector<int> num_IBMpoints, lattice_id ;
     vector<float> posw, Gw, velw, oposw, onB_vec, nB_vec ;
-    float a_axis = Diameter/2.0 ,b_axis = Diameter/2.0 ;
     // decide IB infomation
     num_IBMpoints.push_back(items.num_IBMpoints) ;
-    posB.push_back(20*Diameter) ; 
+    posB.push_back(Leng/2.0) ; 
     posB.push_back(items.dx*items.ny/2.0) ; 
-    posB.push_back(2*Diameter) ;
+    posB.push_back(Leng/2.0) ;
     quaternion.push_back(1); 
     for(i=0;i<3;i++){
         quaternion.push_back(0); velB.push_back(0) ; angleV_B.push_back(0) ; Torque.push_back(0) ; FB.push_back(0);
     }
-    velB[2] = vel_U ;
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.0*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
-    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
-    IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
+    angleV_B[1] = vel_theta ;
+    densB.push_back(1.0*1000) ; massB.push_back(0) ; // density times area(2D)
+    IB.push_back(0) ; IB.push_back(IB[0]) ; IB.push_back(IB[0]) ;
 
     cout<<"dens="<<densB[0]<<" massB="<<massB[0]<<endl;
 
     cout<<"set each IB points"<<endl;
     for(k=0;k<items.num_IBMpoints;k++){
-        int near_id=0 ;
-        float theta1 = 2.0*3.141592*(float)k/items.num_IBMpoints ;
-        oposw.push_back(b_axis*cos(theta1)) ;
+        int near_id=0, num_IB=num_IB1 ; float Radius = R1 ;
+        if(k>=num_IB1){Radius = R2;num_IB=num_IB2;}
+        float theta1 ;
+        if(k<num_IB1){theta1 = 2.0*3.141592*(float)k/(float)num_IB ;}
+        else{theta1 = 2.0*3.141592*(float)(k-num_IB1)/(float)num_IB ;}
+        oposw.push_back(Radius*cos(theta1)) ;
         oposw.push_back(0.0) ; // y
-        oposw.push_back(a_axis*sin(theta1)); 
+        oposw.push_back(Radius*sin(theta1)); 
         // 楕円の法線ベクトルを算出　原点を0とする楕円の法線ベクトル成分は(2x/a^2 , 2y/b^2)
-        onB_vec.push_back(2.0*oposw[k*3+0]) ;
+        onB_vec.push_back(cos(theta1)) ;
         onB_vec.push_back(0) ; // y
-        onB_vec.push_back(2.0*oposw[k*3+2]) ;
-        float norm_nBvec=sqrt(pow(onB_vec[k*3+0],2)+pow(onB_vec[k*3+1],2)+pow(onB_vec[k*3+2],2)) ;
-        for(i=0;i<3;i++){onB_vec[k*3+i] /= norm_nBvec ;} // normalize
-        for(i=0;i<3;i++){ 
-            Gw.push_back(0) ; velw.push_back(0) ;
-            float nbvec= 0, pos= 0 ;
-            for(j=0;j<3;j++){
-                pos   += quaS[i*3+j]*oposw[k*3+j]   ;
-                nbvec += quaS[i*3+j]*onB_vec[k*3+j] ;
-            }
-            nB_vec.push_back(nbvec) ; posw.push_back(posB[i]+pos) ;
+        onB_vec.push_back(sin(theta1)) ;
+        if(k<num_IB1){
+            velw.push_back(vel_U*sin(theta1)) ;
+            velw.push_back(0) ;
+            velw.push_back(-vel_U*cos(theta1)) ;
         }
-        velw[k*3+2] = vel_U ;
+        else{for(i=0;i<3;i++){velw.push_back(0);}}
+        for(i=0;i<3;i++){ 
+            Gw.push_back(0) ; 
+            nB_vec.push_back(onB_vec[k*3+i]) ; 
+            posw.push_back(posB[i]+oposw[k*3+i]) ;
+        }
         float dist1 = 100 ;
         for(i=0;i<items.num_calc;i++){
             float dist2 = sqrt(pow(posx[i]-posw[k*3+0],2) +pow(posy[i]-posw[k*3+1],2) +pow(posz[i]-posw[k*3+2],2) ) ;
@@ -260,7 +282,7 @@ int main (void){
     // num_calc num_wall
     item.push_back(items.num_calc) ; item.push_back(rho.size()-items.num_calc) ;
     // num_IBM_points IBMdx
-    item.push_back(items.num_IBMpoints) ; item.push_back(Diameter*3.14159/items.num_IBMpoints) ;
+    item.push_back(items.num_IBMpoints) ; item.push_back(items.dx) ;
     item.push_back(items.nu) ; item.push_back(pow(10,-9)) ; item.push_back(items.sigma) ;
     item.push_back(items.tau) ; item.push_back(items.taus) ;
     // wall function用の変数を準備
@@ -268,10 +290,6 @@ int main (void){
     set_walln(item, neib, wall1, wall2, wall3, wall4, wall5, wall6) ;
     item.push_back(wall1.size()) ; item.push_back(wall2.size()) ; item.push_back(wall3.size()) ; 
     item.push_back(wall4.size()) ; item.push_back(wall5.size()) ; item.push_back(wall6.size()) ;
-    vector<int> wallin, wallout ;
-    for(j=0;j<items.ny*items.nz*wall_b_number;j++){
-        wallin.push_back(j) ; wallout.push_back(items.num_calc-items.ny*items.nz*wall_b_number+j) ;
-    }
 
     for(i=0;i<items.num_velocity;i++){item.push_back(items.weight[i]) ;}
     for(i=0;i<items.num_velocity;i++){item.push_back(items.cx[i]) ;}
@@ -293,7 +311,6 @@ int main (void){
     float *d_items, *d_M, *d_Minv, *d_S, *d_MM; 
     // side wall
     int *d_wall1, *d_wall2, *d_wall3, *d_wall4, *d_wall5, *d_wall6 ;
-    int *d_wallin, *d_wallout ;
     // IBM
     int   *d_lattice_id ; 
     float *d_velB, *d_posB ;
@@ -323,7 +340,6 @@ int main (void){
     cuMallocCopy(&d_oposw,oposw) ; cuMallocCopy(&d_Gw,Gw) ; cuMallocCopy(&d_velw,velw) ; 
     cuMallocCopy(&d_nBvec,nB_vec) ; cuMallocCopy(&d_onBvec,onB_vec) ; cuMallocCopy(&d_quatold,quaternion) ; 
 
-    cuMallocCopy(&d_wallin, wallin) ; cuMallocCopy(&d_wallout, wallout) ;
     //////////////////////////////////////////////////////////////////////////////////////////////////
     output(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,0,items.save_interval) ;
     IB_csv(0,item, posw, velw, Gw) ;
@@ -368,10 +384,11 @@ int main (void){
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw, rhoH) ;
             update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
-            // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold) ;
+            // update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
             // update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
             // original code
-            update_IBposition<float> <<<numBlocks, blockSize>>>(d_items,d_posB,d_posw,vel_U) ;
+            update_quaternion<<<1,1>>>(d_items,d_angleVB,d_quaternion,d_quaS) ;                                                      // original code
+            update_IBpos<<<numBlocks, blockSize>>>(d_items,num_IB1,d_posB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ; // original code
             search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
         } //
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
@@ -405,25 +422,12 @@ int main (void){
             cudaMemcpy(velw.data() , d_velw ,  velw.size()  * sizeof(float),         cudaMemcpyDeviceToHost) ;
             cudaMemcpy(lattice_id.data(), d_lattice_id , lattice_id.size()* sizeof(int), cudaMemcpyDeviceToHost) ;
             IB_csv(timestep/items.save_interval,item, posw, velw, Gw) ;
-
-            float sum_press=0 ;
-            for(i=0;i<items.num_IBMpoints;i++){
-                // sum_press -= Gw[i] *item[IDX_dIBM] * item[IDX_dIBM] * item[IDX_dIBM] * 1000 ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
-                // sum_press -= Gw[i*3] *item[IDX_dIBM] * item[IDX_dIBM] ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
-                // sum_press -= Gw[i] *item[IDX_dIBM] * item[IDX_dz] * items.dx * 1000 ; // [m/s^2] * [m^3] * [kg/m^3] = [kg・m/s^2] = [N]
-                sum_press -= Gw[i*3+2] ; 
-            }
-            F_D = sum_press ;
-            cout<<"C_D = "<<F_D/(500.0*pow(vel_U,2)*Diameter)<<" Re= "<<vel_U*Diameter/items.nu<<
-            " vel_U= "<<vel_U<<endl; 
-            C_D.push_back(  F_D/(500.0*pow(vel_U,2)*Diameter)) ; C_time.push_back(timestep*items.dt) ; 
-            IB_csv(timestep/items.save_interval,item, posw, velw, Gw) ;
         }
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         resetF<float><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ;
     }
 
-    out_C_D(C_D, C_time) ;
+    // out_C_D(C_D, C_time) ;
     cout<<" dz= "<<items.dx<< " dt= " << items.dt<< " nu= "<<items.nu<<" tau= "<<tau[0]<<endl;
     cout<<"taus= "<<items.taus<<" ratiox= "<<item[7]<<endl;
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;
@@ -434,10 +438,13 @@ int main (void){
     cout<<" dz="<<items.dx<<"m, rx="<<items.ratiox<<", ry="<<items.ratioy<<
     ", nx="<<items.nx<<", ny="<<items.ny<<", nz="<<items.nz<<", dt="<<items.dt<<endl;
 
-    cout<<" vel_U= "<<vel_U<<" Diameter= "<<Diameter<< " nu= "<<items.nu<<" Re= "<<vel_U*Diameter/items.nu<<endl;
     cout<<"###############################################"<<endl;
     cout<<"compute time = " << duration.count() <<endl;
     cout<<"###############################################"<<endl;
-    cout<<"C_D = "<<F_D/(500.0*pow(vel_U,2)*Diameter*items.nz*items.dx)<<" Re= "<<vel_U*Diameter/items.nu<<endl; 
     cout<<"Np = "<<items.num_IBMpoints<<" dx = "<<items.dx<<" IDX_dIBM = "<<item[IDX_dIBM]<< " dIBM/dx = "<<pow(item[IDX_dIBM]/items.dx,1) <<endl; 
+
+    cout<<"L= "<<Leng<<" vel_theta= "<<vel_theta*180/3.141592 <<" vel_U= "<<vel_U <<endl;
+    for(i=0;i<items.num_IBMpoints;i++){
+        // printf("posx=%f nvecx=%f posz=%f nvecz=%f \n",posw[i*3+0],nB_vec[i*3+0],posw[i*3+2],nB_vec[i*3+2]) ;
+    }
 }
