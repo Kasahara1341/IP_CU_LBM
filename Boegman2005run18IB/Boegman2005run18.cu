@@ -35,9 +35,9 @@ int main (void){
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 7/items.dt ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 75/items.dt ;
     items.save_interval = items.total_count/150 ;
-    // items.total_count=2 ; items.save_interval=1 ;
+    // items.total_count=20 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
         
@@ -155,7 +155,7 @@ int main (void){
     }
 
     // set IBM points
-    items.num_IBMpoints = 1.96/items.dx ;
+    items.num_IBMpoints = sqrt(pow(0.29,2)+pow(0.29/0.15,2))/items.dx ;
     vector<float> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
     vector<int> num_IBMpoints, lattice_id ;
     vector<float> posw, Gw, velw, oposw, onB_vec, nB_vec ;
@@ -180,7 +180,7 @@ int main (void){
         int near_id=0 ;
         oposw.push_back(20.0/sqrt(409.0)*items.dx*k) ;
         oposw.push_back(0.5*items.dx) ; // y
-        oposw.push_back(items.nz*items.dx - 0.15*items.dx*k) ; 
+        oposw.push_back(items.nz*items.dx - (0.29/items.dx/(items.num_IBMpoints-1.0)*k)*items.dx ) ; 
         // 楕円の法線ベクトルを算出　原点を0とする楕円の法線ベクトル成分は(2x/a^2 , 2y/b^2)
         onB_vec.push_back(3.0/sqrt(409.0)) ;
         onB_vec.push_back(0) ; // y
