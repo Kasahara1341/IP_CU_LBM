@@ -10,15 +10,15 @@ __device__ float profile_s22(float limit_lenght, float distance, float Rada){
                     + (1.0 * (r < in_line)) ;
     return result ;
 }
-__global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS, float *posB, float *f, float *tau, float *posx, float *posy, float *posz, float *velx, float *vely, float *velz, float *velB){
+__global__ void SPM_ellipse3D(float *items, float *f, float *posx, float *posy, float *posz, float *velx, float *vely, float *velz, float *velB){
     // smoothed-profile method
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     int id_f = id_rho * (int)items[IDX_Q] ;
     if(id_rho<items[IDX_num_calc]){
         float fx=0, fy=0, fz=0 ;
-        fx = (velB[0] - velx[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
-        fy = (velB[1] - vely[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
-        fz = (velB[2] - velz[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
+        fx = (velB[0]*0 - velx[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
+        fy = (velB[1]*0 - vely[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
+        fz = (velB[2]*0 - velz[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
         for(int k =0;k<items[IDX_Q];k++){
             f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
             *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
@@ -26,17 +26,21 @@ __global__ void SPM_ellipse3D(float *items, float Rada, float Radb, float *quaS,
     }
 }
 template<typename Typ>
-__global__ void update_velIBM2(Typ *items, int *lattice_id, Typ *f, Typ *velx, Typ *vely, Typ *velz, Typ *Fx, Typ *Fy, Typ *Fz){
+__global__ void update_velIBM2(Typ *items, Typ *f, Typ *rho, Typ *velx, Typ *vely, Typ *velz, Typ *Fx, Typ *Fy,Typ *Fz, Typ *FIBx, Typ *FIBy, Typ *FIBz){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     if(id_rho<items[IDX_num_calc]){
         int id_f = id_rho * (int)items[IDX_Q] ;
+        velx[id_rho] = 0 ; vely[id_rho] = 0 ; velz[id_rho] = 0 ;
         for(int k =0;k<items[IDX_Q];k++){
-            Typ tmp = items[IDX_dt]*items[IDX_w(k)]*(items[IDX_cx(k)]*Fx[id_rho] + items[IDX_cy(k)]*Fy[id_rho] + items[IDX_cz(k)]*Fz[id_rho]) ;
+            Typ tmp = items[IDX_dt]*items[IDX_w(k)]*(items[IDX_cx(k)]*FIBx[id_rho] + items[IDX_cy(k)]*FIBy[id_rho] + items[IDX_cz(k)]*FIBz[id_rho]) ;
             f[id_f+k]    += tmp ;
-            velx[id_rho] += items[IDX_cx(k)] * tmp ;
-            vely[id_rho] += items[IDX_cy(k)] * tmp ;
-            velz[id_rho] += items[IDX_cz(k)] * tmp ;
+            velx[id_rho] += items[IDX_cx(k)] * f[id_rho] ;
+            vely[id_rho] += items[IDX_cy(k)] * f[id_rho] ;
+            velz[id_rho] += items[IDX_cz(k)] * f[id_rho] ;
         } 
+        velx[id_rho] += items[IDX_dt]*Fx[id_rho]/rho[id_rho]/2.0 ;
+        vely[id_rho] += items[IDX_dt]*Fy[id_rho]/rho[id_rho]/2.0 ;
+        velz[id_rho] += items[IDX_dt]*Fz[id_rho]/rho[id_rho]/2.0 ;
     }
 }
 float sech(float x){
@@ -167,8 +171,6 @@ int main (void){
     } }
     items.nx=0 ; items.ny=0 ; 
     for(i=0;i<divx.size();i++){items.nx+=divx[i];} for(j=0;j<divy.size();j++){items.ny+=divy[j];}
-    cout<<"items nx ="<<items.nx<<" items ny="<<items.ny<<endl<<endl;
-    cout<<"number of calculation lattice is "<<items.num_calc<<" wall lattice is "<<rho.size()-items.num_calc<<endl; cout<<""<<endl;
     for(i=0;i<items.nx;i++){for(j=0;j<items.ny;j++){for(l=0;l<items.nz;l++){
         if(lnum[i*items.ny*items.nz+j*items.nz+l]<0){
             continue ;
@@ -184,6 +186,8 @@ int main (void){
     /* set neighbor wall lattice */
     printf("set neighbor wall lattice \n") ;
     set_neibghor_wall(items,lnum,divx,divy,neib,f,g,Fk,pressure,rho,phi,posx,posy,posz,delX,delY,vel_x,vel_y,vel_z) ;
+    cout<<"items nx ="<<items.nx<<" items ny="<<items.ny<<endl<<endl;
+    cout<<"number of calculation lattice is "<<items.num_calc<<" wall lattice is "<<rho.size()-items.num_calc<<endl; cout<<""<<endl;
     // hydrostatic_pressure(items,Boussi_flag,neib,pressure,rho,f,posz) ;
     for(i=0;i<items.num_calc;i++){
         for(k=0;k<items.num_velocity;k++){
@@ -219,7 +223,7 @@ int main (void){
         int near_id=0 ;
         oposw.push_back(20.0/sqrt(409.0)*items.dx*k) ;
         oposw.push_back(0.5*items.dx) ; // y
-        oposw.push_back(items.nz*items.dx - (0.29/items.dx/(items.num_IBMpoints-1.0)*k)*items.dx ) ; 
+        oposw.push_back(items.nz*items.dx - 0.29/(items.num_IBMpoints-1.0)*k ) ; 
         // 楕円の法線ベクトルを算出　原点を0とする楕円の法線ベクトル成分は(2x/a^2 , 2y/b^2)
         onB_vec.push_back(3.0/sqrt(409.0)) ;
         onB_vec.push_back(0) ; // y
@@ -312,12 +316,12 @@ int main (void){
     auto start=chrono::high_resolution_clock::now() ;
     for(int timestep=1 ; timestep<items.total_count+1 ; timestep++){
         // velocity field
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
-        wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; // */
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; // */
         equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
         Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
         col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
@@ -331,20 +335,20 @@ int main (void){
         IP_process(d_items,numBlocks,blockSize,d_neib,d_g,d_feq,d_ftmp,d_fout,d_items_adv,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; // */
         
         update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_sal) ;
-        // pdate_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_, d_phi) ;
+        // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_, d_phi) ;
         update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_u, d_v, d_w) ; 
         LES           <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
 
         // resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         for(i=0;i<1;i++){
-            SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,0,0,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
+            SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,d_f,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
             // get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw,rhoH) ;
             // update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_FIBx,d_FIBy,d_FIBz,d_Gw,rhoH) ;
-            update_velIBM2<float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_u,d_v,d_w,d_FIBx,d_FIBy,d_FIBz) ;
+            update_velIBM2<float> <<<numBlocks, blockSize>>>(d_items,d_f,d_rho,d_u,d_v,d_w,d_Fx,d_Fy,d_Fz,d_FIBx,d_FIBy,d_FIBz) ;
         } //
-        set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
+        set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ;
         set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
         // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_u) ;  set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_v) ; set_wall_rho<float><<<numBlocks, blockSize>>>(d_items, d_neib, d_w) ;
         // CUDAのエラーをcheck
