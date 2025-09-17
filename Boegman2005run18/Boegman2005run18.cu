@@ -35,8 +35,8 @@ int main (void){
 
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
-    items.save_interval = 1.0/items.dt ; items.total_count= 75/items.dt ;
-    items.save_interval = items.total_count/150 ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 15/items.dt ;
+    items.save_interval = items.total_count/15 ;
     // items.total_count=2 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
@@ -104,7 +104,8 @@ int main (void){
                         posy.push_back( (j + (2*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ) ;
                         delX.push_back( items.dx*items.ratiox/divx[i]) ; delY.push_back( items.dx*items.ratioy/divy[j]) ;
                         sal.push_back(0) ; phi.push_back(1) ;           
-                        sal[sal.size()-1] = 12.13-12.13*tanh((local_z-(h2+(local_x-3)*slope_eta0))/thicness) ; // 6m 
+                        // sal[sal.size()-1] = 12.13-12.13*tanh((local_z-(h2+(local_x-3)*slope_eta0))/thicness) ; // 6m 
+                        sal[sal.size()-1] = 12.13-12.13*tanh((local_z-(h2+(local_x-3)*slope_eta0*0))/thicness) ; // horizontal ditribution
                         // phi[phi.size()-1] = 0.5 - 0.5*tanh( (posz[posz.size()-1] - (d0+eta) )/items.PFthick*2.0 ) ; // 
                         rho.push_back(rhoL+phi[phi.size()-1]*(rhoH-rhoL) + sal[sal.size()-1]*0.824493) ;
 

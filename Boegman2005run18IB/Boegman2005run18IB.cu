@@ -1,13 +1,10 @@
 
 #include "../all.hpp"
 
-__device__ float profile_s22(float limit_lenght, float distance, float Rada){
-    float r = distance, in_line, out_line ; limit_lenght = 0.1 ;
-    in_line  = 1.0-limit_lenght + powf(limit_lenght/2,2) ;
-    out_line = 1.0+limit_lenght + powf(limit_lenght/2,2) ;
-    float result =    (0 * ( out_line < r)) 
-                    + (0.5*(sin(3.14159*r/limit_lenght/Rada) + 1.0) * ( in_line <= r && r<= out_line)) 
-                    + (1.0 * (r < in_line)) ;
+__device__ float profile_s22(float xi, float r){
+    float result =    (0 * ( r > xi/2.0 )) 
+                    + (0.5*(sin(3.14159*r/xi) + 1.0) * ( fabsf(r) <= xi/2.0 )) 
+                    + (1.0 * ( r < -xi/2.0 )) ;
     return result ;
 }
 __global__ void SPM_ellipse3D(float *items, float *f, float *posx, float *posy, float *posz, float *velx, float *vely, float *velz, float *velB){
@@ -15,32 +12,33 @@ __global__ void SPM_ellipse3D(float *items, float *f, float *posx, float *posy, 
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     int id_f = id_rho * (int)items[IDX_Q] ;
     if(id_rho<items[IDX_num_calc]){
+        float distance = (0.15*posx[id_rho]+posz[id_rho]-0.29)/sqrtf(1+powf(0.15,2)) ;
         float fx=0, fy=0, fz=0 ;
-        fx = (velB[0]*0 - velx[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
-        fy = (velB[1]*0 - vely[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
-        fz = (velB[2]*0 - velz[id_rho])/items[IDX_dt] * (posz[id_rho] - 0.29 + 0.15*posx[id_rho] < 0) ;
+        fx = (velB[0]*0 - velx[id_rho])/items[IDX_dt] * profile_s22(items[IDX_dz],distance) ;
+        fy = (velB[1]*0 - vely[id_rho])/items[IDX_dt] * profile_s22(items[IDX_dz],distance) ;
+        fz = (velB[2]*0 - velz[id_rho])/items[IDX_dt] * profile_s22(items[IDX_dz],distance) ;
         for(int k =0;k<items[IDX_Q];k++){
-            f[id_f+k] += items[IDX_w(k)]*items[IDX_dt] * 3.0
+            float tmp = items[IDX_w(k)]*items[IDX_dt] * 3.0
             *( items[IDX_cx(k)]*fx + items[IDX_cy(k)]*fy + items[IDX_cz(k)]*fz )/(powf(items[IDX_c],2)) ;
+            f[id_f+k] += tmp ;
+            velx[id_rho] += items[IDX_cx(k)] * tmp ;
+            vely[id_rho] += items[IDX_cy(k)] * tmp ;
+            velz[id_rho] += items[IDX_cz(k)] * tmp ;
         }
     }
 }
 template<typename Typ>
-__global__ void update_velIBM2(Typ *items, Typ *f, Typ *rho, Typ *velx, Typ *vely, Typ *velz, Typ *Fx, Typ *Fy,Typ *Fz, Typ *FIBx, Typ *FIBy, Typ *FIBz){
+__global__ void update_velIBM2(Typ *items, Typ *f, Typ *velx, Typ *vely, Typ *velz, Typ *FIBx, Typ *FIBy, Typ *FIBz){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     if(id_rho<items[IDX_num_calc]){
         int id_f = id_rho * (int)items[IDX_Q] ;
-        velx[id_rho] = 0 ; vely[id_rho] = 0 ; velz[id_rho] = 0 ;
         for(int k =0;k<items[IDX_Q];k++){
             Typ tmp = items[IDX_dt]*items[IDX_w(k)]*(items[IDX_cx(k)]*FIBx[id_rho] + items[IDX_cy(k)]*FIBy[id_rho] + items[IDX_cz(k)]*FIBz[id_rho]) ;
             f[id_f+k]    += tmp ;
-            velx[id_rho] += items[IDX_cx(k)] * f[id_rho] ;
-            vely[id_rho] += items[IDX_cy(k)] * f[id_rho] ;
-            velz[id_rho] += items[IDX_cz(k)] * f[id_rho] ;
+            velx[id_rho] += items[IDX_cx(k)] * tmp ;
+            vely[id_rho] += items[IDX_cy(k)] * tmp ;
+            velz[id_rho] += items[IDX_cz(k)] * tmp ;
         } 
-        velx[id_rho] += items[IDX_dt]*Fx[id_rho]/rho[id_rho]/2.0 ;
-        vely[id_rho] += items[IDX_dt]*Fy[id_rho]/rho[id_rho]/2.0 ;
-        velz[id_rho] += items[IDX_dt]*Fz[id_rho]/rho[id_rho]/2.0 ;
     }
 }
 float sech(float x){
@@ -146,6 +144,7 @@ int main (void){
                         delX.push_back( items.dx*items.ratiox/divx[i]) ; delY.push_back( items.dx*items.ratioy/divy[j]) ;
                         sal.push_back(0) ; phi.push_back(1) ;           
                         sal[sal.size()-1] = 12.13-12.13*tanh((local_z-(h2+(local_x-3)*slope_eta0))/thicness) ; // 6m 
+                        // sal[sal.size()-1] = 12.13-12.13*tanh((local_z-(h2+(local_x-3)*slope_eta0*0))/thicness) ; // horizontal ditribution
                         if(posz[posz.size()-1] < 0.29 - slope * posx[posx.size()-1]){
                             sal[sal.size()-1] = 0 ;
                         }
@@ -341,12 +340,12 @@ int main (void){
 
         // resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         for(i=0;i<1;i++){
-            SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,d_f,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
+            // SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,d_f,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
             // get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw,rhoH) ;
             // update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
             get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_FIBx,d_FIBy,d_FIBz,d_Gw,rhoH) ;
-            update_velIBM2<float> <<<numBlocks, blockSize>>>(d_items,d_f,d_rho,d_u,d_v,d_w,d_Fx,d_Fy,d_Fz,d_FIBx,d_FIBy,d_FIBz) ;
+            update_velIBM2<float> <<<numBlocks, blockSize>>>(d_items,d_f,d_u,d_v,d_w,d_FIBx,d_FIBy,d_FIBz) ;
         } //
         set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ;
         set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
