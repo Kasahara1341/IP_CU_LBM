@@ -293,5 +293,6 @@ int main (void){
     cout<<"###############################################"<<endl;
     cout<<"compute time = " << duration.count() <<endl;
     cout<<"###############################################"<<endl;
+    cout<<"Np = "<<items.num_IBMpoints<<" dx = "<<items.dx<<" IDX_dIBM = "<<item[IDX_dIBM]<< " dIBM/dx = "<<pow(item[IDX_dIBM]/items.dx,1) <<endl; 
 
 }

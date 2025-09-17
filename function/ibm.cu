@@ -142,9 +142,9 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
         Typ coeffx[3], coeffy[3], coeffz[3] ;
         Typ fw[27]={0} ,fw1[27] ,fw2[27] ;
         Typ u_w=velw[id_rho*3+0], v_w=velw[id_rho*3+1], w_w=velw[id_rho*3+2] ;
-        coeffx[0] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+3]]) ;
-        coeffx[1] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]]) ;
-        coeffx[2] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+1]]) ;
+        coeffx[0] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+3]]) * (neib[lattice_id[id_rho]*(int)items[IDX_Q]+3]<items[IDX_num_calc]) ;
+        coeffx[1] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]]) * (neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]<items[IDX_num_calc]) ;
+        coeffx[2] = weightFunction(items[IDX_dz],posw[id_rho*3+0],posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+1]]) * (neib[lattice_id[id_rho]*(int)items[IDX_Q]+1]<items[IDX_num_calc]) ;
         Typ posl_x[3] ;
         // posl_x[0] = posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+3]] ;
         // posl_x[1] = posx[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]] ;
@@ -174,9 +174,9 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
         }
         else{
             coeffy[0]=0;coeffy[1]=1;coeffy[2]=0;
-            coeffz[0] = weightFunction(items[IDX_dz],posw[id_rho*3+2],posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+4]]) ;
-            coeffz[1] = weightFunction(items[IDX_dz],posw[id_rho*3+2],posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]]) ;
-            coeffz[2] = weightFunction(items[IDX_dz],posw[id_rho*3+2],posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+2]]) ;            
+            coeffz[0] = weightFunction(items[IDX_dz],posw[id_rho*3+2],posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+4]]) * (neib[lattice_id[id_rho]*(int)items[IDX_Q]+4]<items[IDX_num_calc]) ;
+            coeffz[1] = weightFunction(items[IDX_dz],posw[id_rho*3+2],posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]]) * (neib[lattice_id[id_rho]*(int)items[IDX_Q]+0]<items[IDX_num_calc]) ;
+            coeffz[2] = weightFunction(items[IDX_dz],posw[id_rho*3+2],posz[neib[lattice_id[id_rho]*(int)items[IDX_Q]+2]]) * (neib[lattice_id[id_rho]*(int)items[IDX_Q]+2]<items[IDX_num_calc]) ;            
             Typ sum_coef=0;
             for(int i=0;i<3;i++){sum_coef += coeffx[i] ;} for(int i=0;i<3;i++){coeffx[i] /= sum_coef ;}
             sum_coef=0;
