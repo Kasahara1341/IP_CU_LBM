@@ -55,8 +55,8 @@ int main (void){
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     items.dt/=1.0 ;
-    items.save_interval = 1.0/items.dt ; items.total_count= 1.2/items.dt ;
-    items.save_interval = items.total_count/60 ;
+    items.save_interval = 1.0/items.dt ; items.total_count= 0.6/items.dt ;
+    items.save_interval = items.total_count/30 ;
     // items.total_count=200 ; items.save_interval=1 ;
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
@@ -218,9 +218,9 @@ int main (void){
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
     densB.push_back(1.1*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
-    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
-    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ; 
-    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0) ;
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0 ) ; 
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0 ) ; 
+    IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0 ) ;
 
     cout<<"dens="<<densB[0]<<" massB="<<massB[0]<<endl;
 

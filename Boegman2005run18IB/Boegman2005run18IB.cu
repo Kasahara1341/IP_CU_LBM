@@ -340,7 +340,7 @@ int main (void){
 
         // resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
         for(i=0;i<1;i++){
-            // SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,d_f,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
+            SPM_ellipse3D         <<<numBlocks, blockSize>>>(d_items,d_f,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB) ;
             // get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw,rhoH) ;
             // update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 

@@ -36,7 +36,7 @@ int main (void){
         float x = (i+0.5)*items.dx*items.ratiox ;
         // if( 0.032<x && 0.048>x ){
         if( 0.3<x && 0.5>x ){
-            divx.push_back(2) ; continue ;
+            divx.push_back(1) ; continue ;
         }
         else{divx.push_back(1);}
     } // */
@@ -45,7 +45,7 @@ int main (void){
         float y = (i+0.5)*items.dx*items.ratioy ;
         // if( 0.3<y && 0.5>y ){
         if( 0.04<y && 0.06>y ){
-            divy.push_back(2) ;  continue ;
+            divy.push_back(1) ;  continue ;
         }
         divy.push_back(1);
     } // */
