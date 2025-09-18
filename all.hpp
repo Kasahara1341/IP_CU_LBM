@@ -100,7 +100,9 @@ __global__ void resetF(Typ *items, Typ *Fx, Typ *Fy, Typ *Fz, int num_F) ;
 // ibm.cu
 template<typename Typ>
 void IB_csv(int loop, vector<Typ>& items, vector<Typ>& pos, vector<Typ>& velw, vector<Typ>& Gw) ;
-__host__ __device__ void set_quaternionS(int IB_index, float q0, float q1, float q2, float q3, float *quaS) ;
+// __host__ __device__ void set_quaternionS(int IB_index, float q0, float q1, float q2, float q3, float *quaS) ;
+template<typename Typ>
+__host__ __device__ void set_quaternionS(int IB_index, Typ q0, Typ q1, Typ q2, Typ q3, Typ *quaS) ;
 template<typename Typ>
 void set_quaternionS(int IB_index, Typ q0, Typ q1, Typ q2, Typ q3, vector<Typ>& quaS) ;
 template<typename Typ>
@@ -112,9 +114,12 @@ __global__ void get_IBMGw2(Typ *items, int *lattice_id, int *neib, Typ *f, Typ *
 __global__ void IB_directForcing(float *items, int *lattice_id, int *neib, float *posx, float *posy, float *posz, float *posw,float *velx, float *vely, float *velz, float *velw, float *Fx, float *Fy, float *Fz, float *Gw) ;
 template<typename Typ>
 __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Typ *pressure, Typ *tau, Typ *velx, Typ *vely, Typ *velz, Typ *velx_old, Typ *vely_old, Typ *velz_old, Typ *Fx, Typ *Fy, Typ *Fz) ;
-__global__ void update_IBbody(float *items, int IB_index, float *massB, float *densB, float *inertia, float *FB, float *posB, float *Torque, float *velB, float *quat, float *quaS, float *angleVB, float *posw, float *Gw, float *quatold, float rhof) ;
-__global__ void update_IBpoint(float *items, int IB_index, float *posB, float *velB, float *angleVB, float *quaS, float *posw, float *oposw, float *nBvec, float *onBvec, float *velw) ;
-__global__ void search_IBlattice(float *items, int IB_index, int *lattice_id, int *neib, float *posx, float *posy, float *posz, float *posw) ;
+template<typename Typ>
+__global__ void update_IBbody(Typ *items, int IB_index, Typ *massB, Typ *densB, Typ *inertia, Typ *FB, Typ *posB, Typ *Torque, Typ *velB, Typ *quat, Typ *quaS, Typ *angleVB, Typ *posw, Typ *Gw, Typ *quatold, Typ rhof) ;
+template<typename Typ>
+__global__ void update_IBpoint(Typ *items, int IB_index, Typ *posB, Typ *velB, Typ *angleVB, Typ *quaS, Typ *posw, Typ *oposw, Typ *nBvec, Typ *onBvec, Typ *velw) ;
+template<typename Typ>
+__global__ void search_IBlattice(Typ *items, int IB_index, int *lattice_id, int *neib, Typ *posx, Typ *posy, Typ *posz, Typ *posw) ;
 
 
 

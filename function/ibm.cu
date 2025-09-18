@@ -13,7 +13,8 @@ void IB_csv(int loop, vector<Typ>& items, vector<Typ>& pos, vector<Typ>& velw, v
     }
 }
 
-__host__ __device__ void set_quaternionS(int IB_index, float q0, float q1, float q2, float q3, float *quaS){
+template<typename Typ>
+__host__ __device__ void set_quaternionS(int IB_index, Typ q0, Typ q1, Typ q2, Typ q3, Typ *quaS){
             quaS[IB_index*9+0] = powf(q0,2)-powf(q2,2)-powf(q3,2)+powf(q1,2) ;
             quaS[IB_index*9+1] = 2*(q1*q2 - q0*q3) ; 
             quaS[IB_index*9+2] = 2*(q1*q3 + q0*q2) ;
@@ -363,11 +364,12 @@ __global__ void update_velIBM(Typ *items, int *lattice_id, Typ *f, Typ *ftmp, Ty
     }
 }
 
-__global__ void update_IBbody(float *items, int IB_index, float *massB, float *densB, float *inertia, float *FB, float *posB, float *Torque, float *velB, float *quat, 
-    float *quaS, float *angleVB, float *posw, float *Gw, float *quatold, float rhof){
+template<typename Typ>
+__global__ void update_IBbody(Typ *items, int IB_index, Typ *massB, Typ *densB, Typ *inertia, Typ *FB, Typ *posB, Typ *Torque, Typ *velB, Typ *quat, 
+    Typ *quaS, Typ *angleVB, Typ *posw, Typ *Gw, Typ *quatold, Typ rhof){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     if(id_rho<1){
-        float quaSold[9], FBold[3], Torqueold[3], velBold[3], angleVBold[3] ;
+        Typ quaSold[9], FBold[3], Torqueold[3], velBold[3], angleVBold[3] ;
         set_quaternionS(0,quatold[IB_index*4+0],quatold[IB_index*4+1],
             quatold[IB_index*4+2],quatold[IB_index*4+3],quaSold) ;
         for(int i=0;i<3;i++){
@@ -403,7 +405,7 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
         }        
 
         // update Quaternion & Quaternion
-        {float ang[3], qua[4] ; 
+        {Typ ang[3], qua[4] ; 
             for(int i=0;i<4;i++){qua[i]=quat[IB_index*4+i];}  for(int i=0;i<3;i++){ang[i]=angleVB[IB_index*3+i];}
             quat[IB_index*4+0] += items[IDX_dt]*3.0*(-ang[0]*qua[1] - ang[1]*qua[2] - ang[2]*qua[3])/4.0 ;
             quat[IB_index*4+1] += items[IDX_dt]*3.0*( ang[0]*qua[0] + ang[2]*qua[2] - ang[1]*qua[3])/4.0 ;
@@ -421,7 +423,8 @@ __global__ void update_IBbody(float *items, int IB_index, float *massB, float *d
     }
 }
 
-__global__ void update_IBpoint(float *items, int IB_index, float *posB, float *velB, float *angleVB, float *quaS, float *posw, float *oposw, float *nBvec, float *onBvec, float *velw){
+template<typename Typ>
+__global__ void update_IBpoint(Typ *items, int IB_index, Typ *posB, Typ *velB, Typ *angleVB, Typ *quaS, Typ *posw, Typ *oposw, Typ *nBvec, Typ *onBvec, Typ *velw){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     if(id_rho<items[IDX_num_IBPoints]){
         for(int i=0;i<3;i++){
@@ -443,14 +446,15 @@ __global__ void update_IBpoint(float *items, int IB_index, float *posB, float *v
         }
 }
 
-__global__ void search_IBlattice(float *items, int IB_index, int *lattice_id, int *neib, float *posx, float *posy, float *posz, float *posw){
+template<typename Typ>
+__global__ void search_IBlattice(Typ *items, int IB_index, int *lattice_id, int *neib, Typ *posx, Typ *posy, Typ *posz, Typ *posw){
     int id_rho = blockIdx.x * blockDim.x + threadIdx.x ;
     if(id_rho<items[IDX_num_IBPoints]){
         int id=lattice_id[id_rho], near_id=lattice_id[id_rho] ;
-        float dist1 = powf(posx[id]-posw[id_rho*3+0],2) +powf(posy[id]-posw[id_rho*3+1],2) +powf(posz[id]-posw[id_rho*3+2],2) ;
+        Typ dist1 = powf(posx[id]-posw[id_rho*3+0],2) +powf(posy[id]-posw[id_rho*3+1],2) +powf(posz[id]-posw[id_rho*3+2],2) ;
         for(int k=1;k<items[IDX_Q];k++){
             int nei_id= neib[id*(int)items[IDX_Q]+k] ;
-            float dist2 = powf(posx[nei_id]-posw[id_rho*3+0],2) +powf(posy[nei_id]-posw[id_rho*3+1],2) +powf(posz[nei_id]-posw[id_rho*3+2],2) ;
+            Typ dist2 = powf(posx[nei_id]-posw[id_rho*3+0],2) +powf(posy[nei_id]-posw[id_rho*3+1],2) +powf(posz[nei_id]-posw[id_rho*3+2],2) ;
             near_id = near_id*(dist1<=dist2) + nei_id*(dist2<dist1) ;
             dist1   = dist1  *(dist1<=dist2) + dist2 *(dist2<dist1) ;
         }
@@ -461,6 +465,8 @@ __global__ void search_IBlattice(float *items, int IB_index, int *lattice_id, in
 
 template void IB_csv<float>(int, vector<float>&, vector<float>&, vector<float>&, vector<float>&);
 template void IB_csv<double>(int,vector<double>&,vector<double>&,vector<double>&,vector<double>&);
+template void set_quaternionS<float> (int IB_index, float q0, float q1, float q2, float q3, float *quaS) ;
+template void set_quaternionS<double>(int IB_index, double q0, double q1, double q2, double q3, double *quaS) ;
 template void set_quaternionS<float> (int IB_index, float q0, float q1, float q2, float q3, vector<float>& quaS) ;
 template void set_quaternionS<double>(int IB_index, double q0, double q1, double q2, double q3, vector<double>& quaS) ;
 template __global__ void SPM<float>(float*, float, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
@@ -470,3 +476,9 @@ template __global__ void get_IBMGw2<float>(float*, int*, int*, float*, float*, f
 template __global__ void get_IBMGw2<double>(double*, int*, int*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double);
 template __global__ void update_velIBM<float>(float*, int*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 template __global__ void update_velIBM<double>(double*, int*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*);
+template __global__ void update_IBbody<float>(float*, int, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float);
+template __global__ void update_IBbody<double>(double*, int, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double);
+template __global__ void update_IBpoint<float>(float*, int, float*, float*, float*, float*, float*, float*, float*, float*, float*);
+template __global__ void update_IBpoint<double>(double*, int, double*, double*, double*, double*, double*, double*, double*, double*, double*);
+template __global__ void search_IBlattice<float>(float*, int, int*, int*, float*, float*, float*, float*);
+template __global__ void search_IBlattice<double>(double*, int, int*, int*, double*, double*, double*, double*);
