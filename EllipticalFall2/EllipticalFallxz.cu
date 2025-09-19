@@ -28,28 +28,29 @@ int main (void){
     int i, j, l, k ;
     int *cx, *cy, *cz ;
     vector<int> neib, nextK, nextB, divx, divy ; // devided x, y
-    vector<double> f, g, h, Fk, vel_x, vel_y, vel_z, rho, sal, phi, pressure, Fx, Fy, Fz, posx, posy, posz, delX, delY ;
-    vector<double> tau, taus ;
-    vector<double> item ;
+    vector<float> f, g, h, Fk, vel_x, vel_y, vel_z, rho, sal, phi, pressure, Fx, Fy, Fz, posx, posy, posz, delX, delY ;
+    vector<float> tau, taus ;
+    vector<float> item ;
     Items items ; input_items(items,"./input/initial") ; 
-    // {double ny=items.ny; items.nz=items.ny ; items.ny=1 ; items.num_velocity=9;}
+    // {float ny=items.ny; items.nz=items.ny ; items.ny=1 ; items.num_velocity=9;}
     items.PFthick = 3.5*items.dx ; items.sigma = 0.072 *0;
     string Boussinesq_approxi = "on" ; 
     bool Boussi_flag = (strcmp(Boussinesq_approxi.c_str(),"on") ==0) ;
     items.setc(9) ; 
-    vector<double> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
+    vector<float> M((int)pow(items.num_velocity,2)), MM((int)pow(items.num_velocity,2)),
     M_inv((int)pow(items.num_velocity,2)), S(items.num_velocity) ;
-    set_M<double>(items.num_velocity, M, S, M_inv, MM) ;
-    vector<double> vecz_H, vecx_H, vec_theta ;
+    set_M<float>(items.num_velocity, M, S, M_inv, MM) ;
+    vector<float> vecz_H, vecx_H, vec_theta ;
 
-    double H_axis = 0.004 , 
+    float H_axis = items.dx*items.nx , 
     a_axis = H_axis/8.0 ,b_axis = H_axis/16.0 ;
-    a_axis = 0.0005 ; b_axis = a_axis/2.0 ;
+    // a_axis = 0.0005 ; b_axis = a_axis/2.0 ;
     // items.dx = H_axis/items.nz ; items.dt = items.dx ; items.c=items.dx/items.dt ;
 
     // items.nu=0.1364/3.0*items.dt*pow(items.c,2) ;
     // items.nu = 1.50313*pow(10,-6) ;
     // items.nu = 0.1*pow(items.c,2)*items.dt/3.0 ;
+    items.nu = 7.59*pow(10,-7) ; // for 0.00004
 
 
     ////////////////////////////////////////////////////////
@@ -68,7 +69,7 @@ int main (void){
 
     // divide x, y direction
     for(i=0;i<items.nx;i++){
-        double x = (i+0.5)*items.dx*items.ratiox ;
+        float x = (i+0.5)*items.dx*items.ratiox ;
         // if( 0.2<x && 0.9>x ){    // not uniform
         if( 0.24<x && 0.60>x &&i<0){ // uniform
             if( 0.22<x && 0.8>x){
@@ -81,7 +82,7 @@ int main (void){
 
     // divide x, y direction
     for(i=0;i<items.ny;i++){
-        double y = (i+0.5)*items.dx*items.ratioy ;
+        float y = (i+0.5)*items.dx*items.ratioy ;
         // if( 0.21<y && 0.63>y ){ // not uniform
         if( 0.24<y && 0.60>y &&i<0){ // uniform
             if( 0.26<y && 0.58>y){
@@ -102,9 +103,9 @@ int main (void){
             for(j=0;j<items.ny;j++){
                 for(int divj=0;divj<divy[j];divj++){
                     for(l=0;l<items.nz;l++){
-                        double x = ( i + (2.0*divi+1.0)/(2.0*divx[i]) )*items.dx*items.ratiox ;
-                        double y = ( j + (2.0*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ;
-                        double z = ( l + 0.5 )*items.dx ;
+                        float x = ( i + (2.0*divi+1.0)/(2.0*divx[i]) )*items.dx*items.ratiox ;
+                        float y = ( j + (2.0*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ;
+                        float z = ( l + 0.5 )*items.dx ;
                         if(x > 0){
                         // if(pow(x-0.42,2) + pow(y-0.42,2) > pow(0.03,2) ){
                             lnum.push_back(items.num_calc) ;
@@ -118,7 +119,7 @@ int main (void){
     }    
 
     printf("set initial condition \n") ;
-    double rhoL=1, rhoH=1000.0, muL=1.*pow(10,-5), muH=1.016*pow(10,-3) ;
+    float rhoL=1, rhoH=1000.0, muL=1.*pow(10,-5), muH=1.016*pow(10,-3) ;
     { int int_tmp=0 ;
     for(i=0;i<items.nx;i++){
         for(int divi=0;divi<divx[i];divi++){
@@ -126,8 +127,8 @@ int main (void){
                 for(int divj=0;divj<divy[j];divj++){
                     for(l=0;l<items.nz;l++){
                         if(lnum[int_tmp]<0){ int_tmp+=1 ; continue ;}
-                        double local_x = (i + (2*divi+1.0)/(2.0*divx[i]) )*items.dx*items.ratiox ;
-                        double local_z = (0.5 + l)*items.dx ;
+                        float local_x = (i + (2*divi+1.0)/(2.0*divx[i]) )*items.dx*items.ratiox ;
+                        float local_z = (0.5 + l)*items.dx ;
                         posx.push_back(local_x) ; posz.push_back(local_z) ;
                         posy.push_back( (j + (2*divj+1.0)/(2.0*divy[j]) )*items.dx*items.ratioy ) ;
                         delX.push_back( items.dx*items.ratiox/divx[i]) ; delY.push_back( items.dx*items.ratioy/divy[j]) ;
@@ -144,7 +145,7 @@ int main (void){
                         tau.push_back( items.nu*3.0/(pow(items.c,2)*items.dt) + 0.5) ;
                         taus.push_back(1.4*3.0*pow(10,-9)/pow(items.c,2)/items.dt+0.5) ;
                         for(k=0;k<items.num_velocity;k++){
-                            double tmp = (vel_x[vel_x.size()-1]*items.cx[k] + vel_y[vel_x.size()-1]*items.cy[k] + vel_z[vel_x.size()-1]*items.cz[k])/pow(items.c,2) ;
+                            float tmp = (vel_x[vel_x.size()-1]*items.cx[k] + vel_y[vel_x.size()-1]*items.cy[k] + vel_z[vel_x.size()-1]*items.cz[k])/pow(items.c,2) ;
                             Fk.push_back(0) ; f.push_back(0) ;
                             g.push_back(items.weight[k]*sal[sal.size()-1]*(1 + 3*tmp + 4.5*tmp*tmp - 1.5*(pow(vel_x[vel_x.size()-1],2)+pow(vel_y[vel_x.size()-1],2)+pow(vel_z[vel_x.size()-1],2))/pow(items.c,2) )) ;
                         }
@@ -178,21 +179,21 @@ int main (void){
     for(i=items.num_calc;i<rho.size();i++){Fx.push_back(0);Fy.push_back(0);Fz.push_back(0);}
     for(i=0;i<items.num_calc;i++){
         for(k=0;k<items.num_velocity;k++){
-            double tmp = (vel_x[i]*items.cx[k] + vel_y[i]*items.cy[k] + vel_z[i]*items.cz[k])/pow(items.c,2) ;
+            float tmp = (vel_x[i]*items.cx[k] + vel_y[i]*items.cy[k] + vel_z[i]*items.cz[k])/pow(items.c,2) ;
             f[i*items.num_velocity+k] = items.weight[k]*(pressure[i]+3.0*tmp+4.5*pow(tmp,2)-1.5*(pow(vel_x[i],2)+pow(vel_y[i],2)+pow(vel_z[i],2))/pow(items.c,2)) ;
             g[i*items.num_velocity+k] = items.weight[k]*phi[i]*(1.0+3.0*tmp+4.5*pow(tmp,2)-1.5*(pow(vel_x[i],2)+pow(vel_y[i],2)+pow(vel_z[i],2))/pow(items.c,2)) ;
         }
     }
 
     // set IBM points
-    vector<double> oposw ;
+    vector<float> oposw ;
 
     // read sphere points from csv file
     {char sphere_file[100] ;
     sprintf(sphere_file,"ellipse_points_arclength.csv") ;
     std::ifstream file(sphere_file);
     if (!file) {std::cerr << "ファイルを開けません\n";return 1;}    
-    double spherePoints;
+    float spherePoints;
     while (file >> spherePoints) {
         oposw.push_back(spherePoints*a_axis) ;
         if (file.peek() == ',') file.ignore(); // カンマを飛ばす
@@ -200,9 +201,9 @@ int main (void){
 
     // items.num_IBMpoints = 119 ; // set in below code
     items.num_IBMpoints = oposw.size()/3 ; // set with read csv
-    vector<double> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
+    vector<float> velB, posB, angleV_B, quaternion, quaS, IB, massB, FB, Torque, densB ;
     vector<int> num_IBMpoints, lattice_id ;
-    vector<double> posw, Gw, velw, onB_vec, nB_vec ;
+    vector<float> posw, Gw, velw, onB_vec, nB_vec ;
     // decide IB infomation
     num_IBMpoints.push_back(items.num_IBMpoints) ;
     posB.push_back(0.5*H_axis) ; 
@@ -217,7 +218,7 @@ int main (void){
     // velB[0] = 0.025 ;
     for(i=0;i<9;i++){quaS.push_back(0);}
     set_quaternionS(0,quaternion[0],quaternion[1],quaternion[2],quaternion[3],quaS) ;
-    densB.push_back(1.1*1000) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
+    densB.push_back(1.1*rhoH) ; massB.push_back(densB[0] * a_axis*b_axis * 3.141592) ; // density times area(2D)
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0 ) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0 ) ; 
     IB.push_back(massB[0]*(pow(a_axis,2) + pow(b_axis,2) )/4.0 ) ;
@@ -225,7 +226,7 @@ int main (void){
     cout<<"dens="<<densB[0]<<" massB="<<massB[0]<<endl;
 
     cout<<"set each IB points"<<endl;
-    double ellipce_length=0 ;
+    float ellipce_length=0 ;
     for(k=0;k<items.num_IBMpoints;k++){
         int near_id=0 ;
         if(k!=0){ellipce_length+=sqrt(pow(oposw[k*3+0]-oposw[k*3-3],2)+pow(oposw[k*3+2]-oposw[k*3-1],2)) ;}
@@ -233,20 +234,20 @@ int main (void){
         onB_vec.push_back(2.0*oposw[k*3+0]) ;
         onB_vec.push_back(0) ; // y
         onB_vec.push_back(2.0*oposw[k*3+2]) ;
-        double norm_nBvec=sqrt(pow(onB_vec[k*3+0],2)+pow(onB_vec[k*3+1],2)+pow(onB_vec[k*3+2],2)) ;
+        float norm_nBvec=sqrt(pow(onB_vec[k*3+0],2)+pow(onB_vec[k*3+1],2)+pow(onB_vec[k*3+2],2)) ;
         for(i=0;i<3;i++){onB_vec[k*3+i] /= norm_nBvec ;} // normalize
         for(i=0;i<3;i++){ 
             Gw.push_back(0) ; velw.push_back(0) ;
-            double nbvec= 0, pos= 0 ;
+            float nbvec= 0, pos= 0 ;
             for(j=0;j<3;j++){
                 pos   += quaS[i*3+j]*oposw[k*3+j]   ;
                 nbvec += quaS[i*3+j]*onB_vec[k*3+j] ;
             }
             nB_vec.push_back(nbvec) ; posw.push_back(posB[i]+pos) ;
         }
-        double dist1 = 100 ;
+        float dist1 = 100 ;
         for(i=0;i<items.num_calc;i++){
-            double dist2 = sqrt(pow(posx[i]-posw[k*3+0],2) +pow(posy[i]-posw[k*3+1],2) +pow(posz[i]-posw[k*3+2],2) ) ;
+            float dist2 = sqrt(pow(posx[i]-posw[k*3+0],2) +pow(posy[i]-posw[k*3+1],2) +pow(posz[i]-posw[k*3+2],2) ) ;
             if(dist1>dist2){
                 dist1 = dist2 ; near_id = i ;
             }
@@ -285,20 +286,20 @@ int main (void){
 
     printf("allocate device memory \n");
     int *d_neib, *d_nextB, *d_nextK ;
-    double *d_f, *d_ftmp, *d_fout, *d_feq, *d_g ;
-    double *d_posx, *d_posy, *d_posz, *d_delX, *d_delY ;
-    double *d_rho, *d_u, *d_v, *d_w, *d_sal, *d_phi, *d_pressure, *d_tau, *d_taus ;
-    double *d_phiold, *d_uold, *d_vold, *d_wold ;
-    double *d_Fk, *d_Fx, *d_Fy, *d_Fz ;
-    double *d_items, *d_M, *d_Minv, *d_S, *d_MM; 
+    float *d_f, *d_ftmp, *d_fout, *d_feq, *d_g ;
+    float *d_posx, *d_posy, *d_posz, *d_delX, *d_delY ;
+    float *d_rho, *d_u, *d_v, *d_w, *d_sal, *d_phi, *d_pressure, *d_tau, *d_taus ;
+    float *d_phiold, *d_uold, *d_vold, *d_wold ;
+    float *d_Fk, *d_Fx, *d_Fy, *d_Fz ;
+    float *d_items, *d_M, *d_Minv, *d_S, *d_MM; 
     // side wall
     int *d_wall1, *d_wall2, *d_wall3, *d_wall4, *d_wall5, *d_wall6 ;
     // IBM
     int   *d_lattice_id ; 
-    double *d_velB, *d_posB ;
-    double *d_angleVB, *d_quaternion, *d_quaS, *d_IB, *d_massB ;
-    double *d_FB, *d_Torque, *d_densB, *d_posw, *d_oposw, *d_Gw, *d_velw, *d_nBvec, *d_onBvec ;
-    double *d_quatold ;
+    float *d_velB, *d_posB ;
+    float *d_angleVB, *d_quaternion, *d_quaS, *d_IB, *d_massB ;
+    float *d_FB, *d_Torque, *d_densB, *d_posw, *d_oposw, *d_Gw, *d_velw, *d_nBvec, *d_onBvec ;
+    float *d_quatold ;
     cuMallocCopy(&d_neib, neib) ; cuMallocCopy(&d_nextB, nextB) ; cuMallocCopy(&d_nextK,nextK) ;
     cuMallocCopy(&d_M, M)        ; cuMallocCopy(&d_MM, MM) ; 
     cuMallocCopy(&d_Minv, M_inv) ; cuMallocCopy(&d_S, S) ; 
@@ -333,48 +334,48 @@ int main (void){
     auto start=chrono::high_resolution_clock::now() ;
     for(int timestep=1 ; timestep<items.total_count+1 ; timestep++){
         // velocity field
-        // wall_function <double> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        // wall_function <double> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
-        // wall_function <double> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        // wall_function <double> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
-        // wall_function <double> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
-        // wall_function <double> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall1.size(), d_wall1, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 1, 0, 0, wall3.size(), d_wall3, d_v, d_w, d_u, d_Fy, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall5.size(), d_wall5, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 0, 1, wall6.size(), d_wall6, d_u, d_v, d_w, d_Fx, d_Fy, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall2.size(), d_wall2, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ;
+        // wall_function <float> <<<numBlocks, blockSize>>>(d_items, d_delX, d_delY, 0, 1, 0, wall4.size(), d_wall4, d_u, d_w, d_v, d_Fx, d_Fz, d_rho) ; 
 
-        equ_f         <double> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
-        Force         <double> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
-        col_f_MRT     <double> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
-        // col_f_SRT     <double> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
+        equ_f         <float> <<<numBlocks, blockSize>>>(d_items, d_feq, d_pressure, d_u, d_v, d_w) ;
+        Force         <float> <<<numBlocks, blockSize>>>(d_items, Boussi_flag, d_neib, d_f, d_feq, d_tau, d_Fk, d_Fx, d_Fy, d_Fz, d_pressure, d_rho, d_sal, d_phi, d_u, d_v, d_w, d_delX, d_delY, d_posx, d_posy, d_posz) ;
+        // col_f_MRT     <float> <<<numBlocks, blockSize>>>(d_items, d_tau, d_f, d_ftmp, d_feq, d_Fk, d_M, d_Minv, d_S, d_MM) ;
+        col_f_SRT     <float> <<<numBlocks, blockSize>>>(d_items,d_tau,d_f,d_ftmp,d_feq,d_Fk) ;
         IP_process(d_items,numBlocks,blockSize,d_neib,d_f,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,1) ; // 0 => slip ; 1 => bounce back noslip
 
         // salinity 
-        /*col_g_reg     <double> <<<numBlocks, blockSize>>>(d_items, d_taus, d_g, d_ftmp, d_feq, d_sal, d_u, d_v, d_w) ;
+        /*col_g_reg     <float> <<<numBlocks, blockSize>>>(d_items, d_taus, d_g, d_ftmp, d_feq, d_sal, d_u, d_v, d_w) ;
         IP_process(d_items,numBlocks,blockSize,d_neib,d_g,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; //
         // Phase Field
-        /*col_PF        <double> <<<numBlocks, blockSize>>>(d_items, d_neib, d_taus, d_g, d_ftmp, d_feq, d_phi, d_u, d_v, d_w, d_phiold, d_uold, d_vold, d_wold, d_posx, d_posy, d_posz) ;
+        /*col_PF        <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_taus, d_g, d_ftmp, d_feq, d_phi, d_u, d_v, d_w, d_phiold, d_uold, d_vold, d_wold, d_posx, d_posy, d_posz) ;
         IP_process(d_items,numBlocks,blockSize,d_neib,d_g,d_feq,d_ftmp,d_fout,d_nextB,d_nextK,d_posx,d_posy,d_delX,d_delY,0) ; //
-        // set_wall_boundary1<double> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallin , d_g, d_phi, d_u, d_v, d_w) ;
-        // set_wall_boundary1<double> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallout, d_g, d_phi, d_u, d_v, d_w) ; */
+        // set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallin , d_g, d_phi, d_u, d_v, d_w) ;
+        // set_wall_boundary1<float> <<<numBlocks, blockSize>>>(d_items, items.ny*items.nz, d_wallout, d_g, d_phi, d_u, d_v, d_w) ; */
         
-        // update_scalar <double> <<<numBlocks, blockSize>>>(d_items, d_g, d_sal) ;
-        // update_scalar <double> <<<numBlocks, blockSize>>>(d_items, d_g, d_phi) ;
-        update_rho    <double> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_u, d_v, d_w) ; 
-        // update_rho    <double> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_uold, d_vold, d_wold) ; 
-        resetF<double><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
-        // LES           <double> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
-        set_f_ftmp<double>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;
+        // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_sal) ;
+        // update_scalar <float> <<<numBlocks, blockSize>>>(d_items, d_g, d_phi) ;
+        update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_u, d_v, d_w) ; 
+        // update_rho    <float> <<<numBlocks, blockSize>>>(d_items, rhoL, rhoH, d_f, d_Fx, d_Fy, d_Fz, d_pressure, d_sal, d_phi, d_rho, d_uold, d_vold, d_wold) ; 
+        resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
+        // LES           <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_tau, d_taus, d_phi, d_rho, muL, muH, d_u, d_v, d_w, d_posx, d_posy, d_posz) ;
+        set_f_ftmp<float>  <<<numBlocks, blockSize>>>(d_items,d_f,d_ftmp) ;
         for(i=0;i<1;i++){
-            // SPM           <double> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
-            // SPM_ellipse   <double> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
-            get_IBMGw2    <double> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw,rhoH) ;
-            update_velIBM <double> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
+            // SPM           <float> <<<numBlocks, blockSize>>>(d_items, items.dx*items.nx/10 ,d_posB,d_f,d_ftmp,d_tau,d_posx,d_posz,d_Fx,d_Fy,d_Fz,d_u,d_v,d_w,d_velB) ;
+            // SPM_ellipse   <float> <<<numBlocks, blockSize>>>(d_items,b_axis,a_axis,d_quaS,d_posB,d_f,d_tau,d_posx,d_posy,d_posz,d_u,d_v,d_w,d_velB,d_angleVB) ;
+            get_IBMGw2    <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_neib,d_f,d_tau,d_posx,d_posy,d_posz,d_posw,d_posB,d_nBvec,d_u,d_v,d_w,d_velw,d_Fx,d_Fy,d_Fz,d_Gw,rhoH) ;
+            update_velIBM <float> <<<numBlocks, blockSize>>>(d_items,d_lattice_id,d_f,d_ftmp,d_pressure,d_tau,d_u,d_v,d_w,d_uold,d_vold,d_wold,d_Fx,d_Fy,d_Fz) ;
 
             update_IBbody    <<<numBlocks, blockSize>>>(d_items,0,d_massB,d_densB,d_IB,d_FB,d_posB,d_Torque,d_velB,d_quaternion,d_quaS,d_angleVB,d_posw,d_Gw,d_quatold,rhoH) ;
             update_IBpoint   <<<numBlocks, blockSize>>>(d_items,0,d_posB,d_velB,d_angleVB,d_quaS,d_posw,d_oposw,d_nBvec,d_onBvec,d_velw) ;
             search_IBlattice <<<numBlocks, blockSize>>>(d_items,0,d_lattice_id,d_neib,d_posx,d_posy,d_posz,d_posw) ;
         } //
-        // set_wall_rho  <double> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
-        // set_wall_rho  <double> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
-        // set_wall_rho  <double> <<<numBlocks, blockSize>>>(d_items, d_neib, d_u) ;  set_wall_rho  <double> <<<numBlocks, blockSize>>>(d_items, d_neib, d_v) ; set_wall_rho<double><<<numBlocks, blockSize>>>(d_items, d_neib, d_w) ;
+        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_rho) ; 
+        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_phi) ;
+        // set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_u) ;  set_wall_rho  <float> <<<numBlocks, blockSize>>>(d_items, d_neib, d_v) ; set_wall_rho<float><<<numBlocks, blockSize>>>(d_items, d_neib, d_w) ;
 
         
         // CUDAのエラーをcheck
@@ -384,49 +385,49 @@ int main (void){
             return 1;
         } 
         if(timestep%items.save_interval==0){
-            cudaMemcpy(pressure.data(), d_pressure , pressure.size()* sizeof(double), cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(vel_x.data(), d_u    ,  vel_x.size() * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(vel_y.data(), d_v    ,  vel_y.size() * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(vel_z.data(), d_w    ,  vel_z.size() * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(Fx.data()   , d_Fx   ,  Fx.size()    * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(Fy.data()   , d_Fy   ,  Fy.size()    * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(Fz.data()   , d_Fz   ,  Fz.size()    * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(rho.data()  , d_rho  ,  rho.size()   * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(tau.data()  , d_tau  ,  tau.size()   * sizeof(double),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(pressure.data(), d_pressure , pressure.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(vel_x.data(), d_u    ,  vel_x.size() * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(vel_y.data(), d_v    ,  vel_y.size() * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(vel_z.data(), d_w    ,  vel_z.size() * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Fx.data()   , d_Fx   ,  Fx.size()    * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Fy.data()   , d_Fy   ,  Fy.size()    * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Fz.data()   , d_Fz   ,  Fz.size()    * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(rho.data()  , d_rho  ,  rho.size()   * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(tau.data()  , d_tau  ,  tau.size()   * sizeof(float),         cudaMemcpyDeviceToHost) ;
             printf("loop%02d  time=%f\n",timestep/items.save_interval,timestep*items.dt) ;
-            output<double>(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,timestep,items.save_interval) ;
+            output<float>(item,posx,posy,posz,delX,delY,pressure,vel_x,vel_y,vel_z,sal,phi,rho,Fx,Fy,Fz,timestep,items.save_interval) ;
             if(isnan(vel_x[items.ny*items.nz*5])!=0){
                 cout<<"######################################"<<endl<<"Not a number is detected !"
                 <<endl<<"######################################"<<endl; break;} // check NAN
-            cudaMemcpy(Gw.data()   , d_Gw   ,  Gw.size()    * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(posw.data() , d_posw ,  posw.size()  * sizeof(double),         cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(velw.data() , d_velw ,  velw.size()  * sizeof(double),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Gw.data()   , d_Gw   ,  Gw.size()    * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(posw.data() , d_posw ,  posw.size()  * sizeof(float),         cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(velw.data() , d_velw ,  velw.size()  * sizeof(float),         cudaMemcpyDeviceToHost) ;
             cudaMemcpy(lattice_id.data(), d_lattice_id , lattice_id.size()* sizeof(int), cudaMemcpyDeviceToHost) ;
             IB_csv(timestep/items.save_interval,item, posw, velw, Gw) ;
-            cudaMemcpy(posB.data(), d_posB , posB.size()* sizeof(double), cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(velB.data(), d_velB , velB.size()* sizeof(double), cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(Torque.data(), d_Torque , Torque.size()* sizeof(double), cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(angleV_B.data(), d_angleVB , angleV_B.size()* sizeof(double), cudaMemcpyDeviceToHost) ;
-            cudaMemcpy(FB.data(), d_FB , FB.size()* sizeof(double), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(posB.data(), d_posB , posB.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(velB.data(), d_velB , velB.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(Torque.data(), d_Torque , Torque.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(angleV_B.data(), d_angleVB , angleV_B.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(FB.data(), d_FB , FB.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
             cout<<" position    velocity   Force   angle_vel  Torque "<< "mass= "<<massB[0]<<" IB= "<<IB[0]<<endl;
             for(i=0;i<3;i++){
-                printf("%f  %f  %f  %f  %f\n",posB[i],velB[i],FB[i],angleV_B[i]*100000,Torque[i]*100000);
+                printf("%f  %f  %f  %f  %f\n",posB[i],velB[i],FB[i],angleV_B[i],Torque[i]*100000);
             }
-            double z_H=(posB[2]/(H_axis)-2.5), x_H=posB[0]/(H_axis) ; 
+            float z_H=(posB[2]/(H_axis)-2.5), x_H=posB[0]/(H_axis) ; 
             // cout<<" x/H= "<<z_H<<" y/H= "<<x_H<< "  Stokes Re= "<<velB[0]*2*a_axis/items.nu <<" exact Re= "<< 4*pow(a_axis,3)*(densB[0]-1000)*9.81/(9*pow(items.nu,2)*1000) <<endl;
             cout<<" x/H= "<<z_H<<" y/H= "<<x_H<< " Re= "<<velB[2]*2*a_axis/items.nu <<" exact Re= "<< 
             0.233*pow(a_axis,2)/items.nu * pow( pow(9.81*(densB[0]-1000)/1000,2) /items.nu  ,1/3.0)
             // << " Potential energy = "<< -massB[0]*9.81*posB[0] <<" Momentum energy ="<< massB[0]*(pow(velB[0],2) + pow(velB[1],2) + pow(velB[2],2))/2.0
             // << " Total energy ="<< -massB[0]*9.81*posB[0] + massB[0]*(pow(velB[0],2)+pow(velB[1],2)+pow(velB[2],2))/2.0 
             <<endl;
-            cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(double), cudaMemcpyDeviceToHost) ;
+            cudaMemcpy(quaternion.data(), d_quaternion , quaternion.size()* sizeof(float), cudaMemcpyDeviceToHost) ;
             cout<<"Q0= "<<quaternion[0]<<"  Q2= "<< quaternion[2]<<" theta "<<2 * atan2(quaternion[2],quaternion[0])*180/3.141592<<
                 " norm = "<<pow(quaternion[0],2)+pow(quaternion[2],2)+pow(quaternion[1],2)+pow(quaternion[3],2)<<   endl;
             vecz_H.push_back(z_H) ; vecx_H.push_back(x_H) ; vec_theta.push_back(2 * atan2(quaternion[2],quaternion[0])*180/3.141592) ;
 
         }
-        resetF<double><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
-        resetF<double><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ; 
+        resetF<float><<<numBlocks, blockSize>>>(d_items, d_Fx, d_Fy, d_Fz, Fx.size()) ;
+        resetF<float><<<numBlocks, blockSize>>>(d_items, d_Gw, d_Gw, d_Gw, Gw.size()) ; 
     }
 
     out_z_H(vecz_H, vecx_H,"z_H.csv") ;
@@ -436,7 +437,7 @@ int main (void){
     cout<<"nx= "<<items.nx<< " ny= "<<items.ny<< " nz= "<<items.nz<<" num_velocity= "<<items.num_velocity<<endl;
     cout<<"number of calculation lattice is "<<items.num_calc<<" wall lattice is "<<rho.size()-items.num_calc<<endl; cout<<""<<endl;
     auto end=chrono::high_resolution_clock::now() ;
-    chrono::duration<double> duration=end-start ;
+    chrono::duration<float> duration=end-start ;
     cout<<endl;
     cout<<" dz="<<items.dx<<"m, rx="<<items.ratiox<<", ry="<<items.ratioy<<
     ", nx="<<items.nx<<", ny="<<items.ny<<", nz="<<items.nz<<", dt="<<items.dt<<endl;
