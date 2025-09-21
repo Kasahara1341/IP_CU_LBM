@@ -1,3 +1,4 @@
+import numpy as np
 class Element: #格子のオブジェクト
     def __init__(self, position,elev,coeff,width): # コンストラクタ(selfがオブジェクトの個性的な感じ，それ以降の変数は個性の内訳)
         self.position = position # 格子点の位置
@@ -13,6 +14,9 @@ class Element: #格子のオブジェクト
     #数値計算法の選択
     def set_Euler(self):
         self.time_evo = Euler()
+    #数値計算法の選択
+    def set_AdamsBashforth4th(self):
+        self.time_evo = AdamsBashforth4th()
 
     # 質量保存則
     def solve_mass_equation(self,dt):
@@ -70,4 +74,24 @@ class Euler:
     # 水深の時間発展
     def update_depth(self,Element,dt):
         uppdated_depth = Element.get_variable_depth()+Element.calc_increment()*dt
+        Element.set_depth(uppdated_depth)
+
+class AdamsBashforth4th:
+    def __init__(self) -> None:
+        # self.prev_time = [0,0,0,0]    # 可変dtに対応するなら必要
+        self.coeff = [55.0/24.0,-59.0/24.0,37/24.0,-9/24.0]
+        self.prev_dh = [0,0,0,0]
+    # incrementリストを更新 [0]が最新，[3]が一番古い
+    def update_increment_list(self,Element):
+        for i in range(3):
+            self.prev_dh[i+1] = self.prev_dh[i]
+        dh = Element.calc_increment()
+        self.prev_dh[0] = dh
+    # 水深の時間発展
+    def update_depth(self,Element,dt):
+        self.update_increment_list(Element)
+        sum_increment = 0
+        for i in range(4):
+            sum_increment += self.coeff[i]*self.prev_dh[i]
+        uppdated_depth = Element.get_variable_depth() + dt*sum_increment
         Element.set_depth(uppdated_depth)

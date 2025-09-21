@@ -4,6 +4,7 @@ from Plot import plot_results
 
 import numpy as np
 import pandas as pd
+import time as timers
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -38,8 +39,7 @@ for i in range(sec.shape[0]):
     for j in range(sec.shape[1]):
         if sec[i,j] < 350 and sec[i,j] >= 329:
             zb2.append(z[i,j])
-            #width2.append(w[i,j])
-            width2.append(100)
+            width2.append(w[i,j])
             x2.append(xjunc + count*150)  # 合流点から見た河口からの距離
             count = count +1
 
@@ -54,7 +54,8 @@ zb2 = np.array(zb2)
 x2 = np.array(x2)
 width2 = np.array(width2)
 
-#zb = np.linspace(zb[0], zb[-1], len(zb))
+# 直線流路化
+zb = np.linspace(zb[0], zb[-1], len(zb))
 
 zb = zb[::-1]
 x  = x[::-1]
@@ -126,6 +127,7 @@ bc_upnode = Node()
 elements[0].set_upnoad(bc_upnode)
 bc_dnelement = Element(x[n_riv-1]-150,zb[n_riv-1]-ib*150,0.03,width[n_riv-1])
 nodes[n_riv-1].set_downelement(bc_dnelement)
+bc_dnelement.set_upnoad(nodes[n_riv-1])
 
 # 境界条件(支川)
 bc_upnode2 = Node()
@@ -137,9 +139,12 @@ elements[16].set_upnoad(nodes2[-1])
 
 for target_element in elements:  #本川
     target_element.set_Euler()
+    # target_element.set_AdamsBashforth4th()
 
-for target_element in elements2: #本川
+
+for target_element in elements2: #支川
     target_element.set_Euler()
+    # target_element.set_AdamsBashforth4th()
 
 # 初期条件
 for i in range(n_riv): #本川
@@ -149,8 +154,12 @@ for i in range(n_riv): #本川
 for i in range(n_riv2): #本川
     elements2[i].set_depth(0)
     nodes2[i].set_q(0)
-
-
+bc_upnode.set_q(Qb[0])
+bc_upnode2.set_q(Qb2[0])
+bc_dnelement.set_depth(elements[n_riv-1].get_variable_depth())
+for i in range(4):
+    elements[0].solve_mass_equation(dt)
+elements[0].set_depth(0)
 
 Hs = []
 Qs = []
@@ -159,17 +168,22 @@ Qs2 = []
 
 time = 0
 t = 0
-maxt = 10
+maxt = 400
 # maxt = 0.05
 
 ### check variables ###
-total_Qin = 0
+total_Qin   = 0
 total_water = 0
-total_Qout = 0
+total_Qout  = 0
+bc_dnQout   = [0,0,0,0]
+AB4thcoeff  = [55.0/24.0,-59.0/24.0,37.0/24.0,-9.0/24.0]
+
+# 計算開始時刻を記録
+start_time = timers.time()
 #####################
 ### 時間発展ループ ###
 #####################
-while time/3600.0 < maxt:
+while time/3600 < maxt:
     H = []  # 水深の縦断分布
     Q = []  # 流量の縦断分布
     H2 = []
@@ -193,7 +207,13 @@ while time/3600.0 < maxt:
         h  = target_element.get_variable_depth()
         total_water += h*target_element.get_width()*150
         H.append(h)
-    total_Qout += elements[-1].dnnoads[0].get_variable_q()*dt
+
+    # Adams Bashforth採用時の本川下端での流出量計算
+    for i in range(3):
+        bc_dnQout[i+1] =  bc_dnQout[i]
+        total_Qout     += bc_dnQout[i+1]*AB4thcoeff[i+1]
+    bc_dnQout[0]       =  elements[-1].dnnoads[0].get_variable_q()*dt
+    total_Qout += bc_dnQout[0]*AB4thcoeff[0]
     for target_element in elements2:
         target_element.solve_mass_equation(dt)       # 質量保存側
         h2  = target_element.get_variable_depth()
@@ -204,7 +224,6 @@ while time/3600.0 < maxt:
         target_node.solve_momentum_equation()
         q = target_node.get_variable_q()
         Q.append(q)
-
     for target_node in nodes2:
         target_node.solve_momentum_equation()
         q2 = target_node.get_variable_q()
@@ -217,8 +236,6 @@ while time/3600.0 < maxt:
     dt = init_dt
     t = t+1
     time = time+dt
-    # print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
-
     if np.mod(time/3600,1)==0:
         print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
         print("numerical error = ",(total_Qout+total_water-total_Qin)/total_Qin)
@@ -228,6 +245,10 @@ while time/3600.0 < maxt:
         Qs2.append(Q2)
         print("time:",time/3600,"  [h]",r"Q(m^3/s):")
 # """
+# 計算終了時刻を記録
+end_time = timers.time()
+# 経過時間を表示
+print(f"計算時間: {end_time - start_time:.3f} 秒")
 # save
 Hs = np.array(Hs)
 Qs = np.array(Qs)
