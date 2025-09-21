@@ -157,10 +157,6 @@ for i in range(n_riv2): #本川
 bc_upnode.set_q(Qb[0])
 bc_upnode2.set_q(Qb2[0])
 bc_dnelement.set_depth(elements[n_riv-1].get_variable_depth())
-for i in range(4):
-    elements[0].solve_mass_equation(dt)
-    elements2[0].solve_mass_equation(dt)
-elements[0].set_depth(0) ; elements2[0].set_depth(0)
 
 Hs = []
 Qs = []
@@ -169,15 +165,24 @@ Qs2 = []
 
 time = 0
 t = 0
-maxt = 10
+maxt = 400
 # maxt = 0.05
 
 ### check variables ###
 total_Qin   = 0
 total_water = 0
 total_Qout  = 0
+bc_dnQin    = [0,0,0,0] ; bc_dnQ2in   = [0,0,0,0]
 bc_dnQout   = [0,0,0,0]
 AB4thcoeff  = [55.0/24.0,-59.0/24.0,37.0/24.0,-9.0/24.0]
+# setup initial Qin for AdamsBashforth4th
+for i in range(4):
+    elements[0].solve_mass_equation(dt)
+    elements2[0].solve_mass_equation(dt)
+    bc_dnQin[i] = Qb[0] ; bc_dnQ2in[i] = Qb2[0]
+elements[0].set_depth(0) ; elements2[0].set_depth(0)
+q_plot = []  # 流量の縦断分布(プロット用)
+t_plot = []  # x座標(プロット用)
 
 # 計算開始時刻を記録
 start_time = timers.time()
@@ -187,8 +192,8 @@ start_time = timers.time()
 while time/3600 < maxt:
     H = []  # 水深の縦断分布
     Q = []  # 流量の縦断分布
-    H2 = []
-    Q2 = []
+    H2 = [] # 支川の水深の縦断分布
+    Q2 = [] # 支川の流量の縦断分布
     
     H.append(time/3600)
     Q.append(time/3600)
@@ -197,10 +202,16 @@ while time/3600 < maxt:
     total_water = 0
 
     # boundary contion
-    bc_upnode.set_q(Qb[int(t * dt // 3600)])
-    bc_upnode2.set_q(Qb2[int(t * dt // 3600)])
-    total_Qin += Qb[int(t * dt // 3600)] * dt
-    total_Qin += Qb2[int(t * dt // 3600)] * dt
+    bc_upnode.set_q(Qb[int(time // 3600)])
+    bc_upnode2.set_q(Qb2[int(time // 3600)])
+    for i in range(3):
+        bc_dnQin[i+1] =  bc_dnQin[i]
+        bc_dnQ2in[i+1] =  bc_dnQ2in[i]
+    bc_dnQin[0] = Qb[int(time // 3600)]
+    bc_dnQ2in[0] = Qb2[int(time // 3600)]
+    for i in range(4):
+        total_Qin += bc_dnQin[i] *AB4thcoeff[i]*dt
+        total_Qin += bc_dnQ2in[i]*AB4thcoeff[i]*dt
     bc_dnelement.set_depth(elements[n_riv-1].get_variable_depth())
 
     for target_element in elements:
@@ -215,7 +226,7 @@ while time/3600 < maxt:
         total_Qout     += bc_dnQout[i+1]*AB4thcoeff[i+1]*dt
     bc_dnQout[0]       =  elements[-1].dnnoads[0].get_variable_q()
     total_Qout += bc_dnQout[0]*AB4thcoeff[0]*dt
-    # total_Qout += elements[-1].dnnoads[0].get_variable_q()*dt  
+    # total_Qout += elements[-1].dnnoads[0].get_variable_q()*dt  # Eluer法用
     for target_element in elements2:
         target_element.solve_mass_equation(dt)       # 質量保存側
         h2  = target_element.get_variable_depth()
@@ -225,7 +236,7 @@ while time/3600 < maxt:
     for target_node in nodes:
         target_node.solve_momentum_equation()
         q = target_node.get_variable_q()
-        Q.append(q)
+        Q.append(q) 
     for target_node in nodes2:
         target_node.solve_momentum_equation()
         q2 = target_node.get_variable_q()
@@ -238,6 +249,8 @@ while time/3600 < maxt:
     dt = init_dt
     t = t+1
     time = time+dt
+    # print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
+    # print(Qb[int(time // 3600)],Qb2[int(time // 3600)],dt,time/3600)
     if np.mod(time/3600,1)==0:
         print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
         print("numerical error = ",(total_Qout+total_water-total_Qin)/total_Qin)
@@ -245,6 +258,8 @@ while time/3600 < maxt:
         Qs.append(Q)
         Hs2.append(H2)
         Qs2.append(Q2)
+        q_plot.append(elements[len(elements)//2].dnnoads[0].get_variable_q())
+        t_plot.append(time/3600)
         print("time:",time/3600,"  [h]",r"Q(m^3/s):")
 # """
 # 計算終了時刻を記録
@@ -254,6 +269,14 @@ print(f"計算時間: {end_time - start_time:.3f} 秒")
 # save
 Hs = np.array(Hs)
 Qs = np.array(Qs)
+
+figure = plt.figure()
+plt.plot(t_plot,q_plot,label="Q")
+plt.xlabel("t [h]")
+plt.ylabel("Q [m^3/s]")
+plt.grid()
+plt.legend()
+plt.savefig("./out/hydroGraph.png")
 
 # 水深⇒zbの変換
 for i in range(zb.shape[0]):

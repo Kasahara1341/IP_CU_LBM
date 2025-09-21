@@ -79,7 +79,7 @@ class Euler:
 class AdamsBashforth4th:
     def __init__(self) -> None:
         # self.prev_time = [0,0,0,0]    # 可変dtに対応するなら必要
-        self.coeff = [55.0/24.0,-59.0/24.0,37/24.0,-9/24.0]
+        self.coeff = [55.0/24.0, -59.0/24.0, 37.0/24.0, -9.0/24.0]
         self.prev_dh = [0,0,0,0]
     # incrementリストを更新 [0]が最新，[3]が一番古い
     def update_increment_list(self,Element):
