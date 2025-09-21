@@ -138,13 +138,13 @@ nodes2[-1].set_downelement(elements[16])
 elements[16].set_upnoad(nodes2[-1])
 
 for target_element in elements:  #本川
-    target_element.set_Euler()
-    # target_element.set_AdamsBashforth4th()
+    # target_element.set_Euler()
+    target_element.set_AdamsBashforth4th()
 
 
 for target_element in elements2: #支川
-    target_element.set_Euler()
-    # target_element.set_AdamsBashforth4th()
+    # target_element.set_Euler()
+    target_element.set_AdamsBashforth4th()
 
 # 初期条件
 for i in range(n_riv): #本川
@@ -159,7 +159,8 @@ bc_upnode2.set_q(Qb2[0])
 bc_dnelement.set_depth(elements[n_riv-1].get_variable_depth())
 for i in range(4):
     elements[0].solve_mass_equation(dt)
-elements[0].set_depth(0)
+    elements2[0].solve_mass_equation(dt)
+elements[0].set_depth(0) ; elements2[0].set_depth(0)
 
 Hs = []
 Qs = []
@@ -168,7 +169,7 @@ Qs2 = []
 
 time = 0
 t = 0
-maxt = 400
+maxt = 10
 # maxt = 0.05
 
 ### check variables ###
@@ -211,9 +212,10 @@ while time/3600 < maxt:
     # Adams Bashforth採用時の本川下端での流出量計算
     for i in range(3):
         bc_dnQout[i+1] =  bc_dnQout[i]
-        total_Qout     += bc_dnQout[i+1]*AB4thcoeff[i+1]
-    bc_dnQout[0]       =  elements[-1].dnnoads[0].get_variable_q()*dt
-    total_Qout += bc_dnQout[0]*AB4thcoeff[0]
+        total_Qout     += bc_dnQout[i+1]*AB4thcoeff[i+1]*dt
+    bc_dnQout[0]       =  elements[-1].dnnoads[0].get_variable_q()
+    total_Qout += bc_dnQout[0]*AB4thcoeff[0]*dt
+    # total_Qout += elements[-1].dnnoads[0].get_variable_q()*dt  
     for target_element in elements2:
         target_element.solve_mass_equation(dt)       # 質量保存側
         h2  = target_element.get_variable_depth()
@@ -259,6 +261,7 @@ for i in range(zb.shape[0]):
 
 np.savetxt("./out/Hs.csv",Hs, fmt="%.6f", delimiter=",")
 np.savetxt("./out/Qs.csv",Qs, fmt="%.6f", delimiter=",")
+print("output Hs.csv, Qs.csv")
 
 Hss = Hs[:,1:]
 
@@ -288,6 +291,7 @@ ani = animation.FuncAnimation(fig, update, frames=Hss.shape[0], blit=True)
 
 ani.save("./out/waterlevel.gif", writer="pillow", fps=20)
 plt.close()
+print("output waterlevel.gif")
 
 Qss = Qs[:,1:]   # 流量データ（時系列 × 空間）
 
