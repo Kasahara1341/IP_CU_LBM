@@ -1,9 +1,9 @@
 import numpy as np
-class Node:
+cdef class Node:
     def __init__(self):
-        self.q = None
-        self.down_element =None
-        self.up_element = None
+        self.q = 0
+        self.down_element =0
+        self.up_element = 0
         
 
     def set_upelement(self,up_element):
@@ -21,17 +21,17 @@ class Node:
     def set_q(self,value):
         self.q = value
 
-    def get_variable_q(self):
+    cdef double get_variable_q(self):
         return self.q
     
     # Nodeにおけるフラックス
-    def calc_flux(self):
+    cdef double calc_flux(self):
         #dx = abs(self.down_element.get_position()-self.up_element.get_position())
         flux = self.q/150
         return flux
     
     # 運動方程式(拡散波近似)
-    def solve_momentum_equation(self):
+    cdef void solve_momentum_equation(self):
         elevup = self.up_element.get_elev()
         elevdn = self.down_element.get_elev()
         Hup     = elevup + self.up_element.get_variable_depth()

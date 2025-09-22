@@ -40,9 +40,6 @@ class Element: #格子のオブジェクト
         dh = (fluxin - fluxout)/self.width
         return dh
 
-    #def set_upnoad(self,upnoad):
-    #    self.upnoad = upnoad
-
     def set_upnoad(self,upnoad):
         self.upnoads.append(upnoad)
         
@@ -75,7 +72,6 @@ class Element: #格子のオブジェクト
 
 
 class Euler:
-    
     # 水深の時間発展
     def update_depth(self,Element,dt):
         uppdated_depth = Element.get_variable_depth()+Element.calc_increment()*dt

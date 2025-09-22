@@ -1,0 +1,10 @@
+cdef class Runge_Kutta_6th(object):
+    cdef update_stage(self)
+    cdef set_hold(self,double)
+    cdef update_stage0_variables(self,Element,double)
+    cdef update_stage1_variables(self,Element,double)
+    cdef update_stage2_variables(self,Element,double)
+    cdef update_stage3_variables(self,Element,double)
+    cdef update_stage4_variables(self,Element,double)
+    cdef update_stage5_variables(self,Element,double)
+    cdef update_depth(self,Element,double dt)

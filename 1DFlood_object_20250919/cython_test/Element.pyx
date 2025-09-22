@@ -1,16 +1,17 @@
 from RK6th import Runge_Kutta_6th
+from Node cimport Node
 import numpy as np
-class Element: #格子のオブジェクト
-    def __init__(self, position,elev,coeff,width): # コンストラクタ(selfがオブジェクトの個性的な感じ，それ以降の変数は個性の内訳)
+cdef class Element: #格子のオブジェクト
+    def __init__(self,double position,double elev,double coeff,double width): # コンストラクタ(selfがオブジェクトの個性的な感じ，それ以降の変数は個性の内訳)
         self.position = position # 格子点の位置
         self.elev = elev # 格子点の標高
         self.coeff = coeff  # 粗度係数
         self.width = width #川幅
-        self.depth = None  # Noneのやつはあとでdefで決める必要あり
-        self.old_depth = None
+        self.depth = 0
+        self.old_depth = 0
         self.upnoads = []
         self.dnnoads = []
-        self.time_evo  = None
+        self.time_evo  = 0
 
     #数値計算法の選択
     def set_Euler(self):
@@ -24,10 +25,10 @@ class Element: #格子のオブジェクト
         self.time_evo = Runge_Kutta_6th()        
 
     # 質量保存則
-    def solve_mass_equation(self,dt):
+    cdef void solve_mass_equation(self,double dt):
         self.time_evo.update_depth(self,dt)   # hの更新
     
-    def calc_increment(self):
+    cdef double calc_increment(self):
         fluxin = 0.0
         fluxout = 0.0
 
@@ -55,22 +56,22 @@ class Element: #格子のオブジェクト
     def set_old_depth(self,value):   # 現時刻の水深
         self.old_depth = value
 
-    def get_variable_depth(self):
+    cpdef double get_variable_depth(self):
         return self.depth
 
     def get_variable_old_depth(self):
         return self.old_depth
     
-    def get_position(self):
+    cdef double get_position(self):
         return self.position
     
-    def get_elev(self):
+    cdef double get_elev(self):
         return self.elev
     
-    def get_width(self):
+    cdef double get_width(self):
         return self.width
     
-    def get_coeff(self):
+    cdef double get_coeff(self):
         return self.coeff
 
 
@@ -125,48 +126,48 @@ class AdamsBashforth4th:
         uppdated_depth = Element.get_variable_depth() + dt*sum_increment
         Element.set_depth(uppdated_depth)
 
-class Runge_Kutta_4th(object):
+cdef class Runge_Kutta_4th:
     def __init__(self):
         self.stage = 0
-        self.hold = None
+        self.hold = 0
         self.increments = []
 
-    def update_stage(self):
+    cdef void update_stage(self):
         if self.stage < 3:
             self.stage += 1
         else:
             self.stage = 0
     
-    def set_hold(self,value):
+    cdef void set_hold(self,double value):
         self.hold = value
     
-    def update_stage0_variables(self,Element,dt):
+    cdef void update_stage0_variables(self,Element Element,double dt):
         k1 = Element.calc_increment()
         uppdated_depth = self.hold + 0.5*k1*dt
         Element.set_depth(uppdated_depth)
         self.increments.append(k1)
         self.update_stage()
     
-    def update_stage1_variables(self,Element,dt):
+    cdef void update_stage1_variables(self,Element Element,double dt):
         k2 = Element.calc_increment()
         uppdated_depth = self.hold + 0.5*k2*dt
         Element.set_depth(uppdated_depth)
         self.increments.append(k2)
         self.update_stage()
     
-    def update_stage2_variables(self,Element,dt):
+    cdef void update_stage2_variables(self,Element Element,double dt):
         k3 = Element.calc_increment()
         uppdated_depth = self.hold + k3*dt
         Element.set_depth(uppdated_depth)
         self.increments.append(k3)
         self.update_stage()
 
-    def update_stage3_variables(self,Element,dt):
+    cdef void update_stage3_variables(self,Element Element,double dt):
         k4 = Element.calc_increment()
         self.increments.append(k4)
         self.update_stage()
 
-    def update_depth(self,Element,dt):
+    cdef void update_depth(self,Element Element,double dt):
         if self.stage == 0:
             self.hold = Element.get_variable_depth()
             self.update_stage0_variables(Element,dt)

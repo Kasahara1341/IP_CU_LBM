@@ -141,9 +141,9 @@ elements[16].set_upnoad(nodes2[-1])
 for taget_element in [elements, elements2]:
     for target in taget_element:
         # target.set_Euler()                ; number_of_stage = 1
-        # target.set_AdamsBashforth4th(dt)  ; number_of_stage = 1
+        target.set_AdamsBashforth4th(dt)  ; number_of_stage = 1
         # target.set_Runge_Kutta_4th()      ; number_of_stage = 4
-        target.set_Runge_Kutta_6th()      ; number_of_stage = 6
+        # target.set_Runge_Kutta_6th()      ; number_of_stage = 6
 
 # 初期条件
 for target in [elements, elements2]:
@@ -162,7 +162,7 @@ Qs = []
 
 time = 0
 t = 0
-# maxt = 10
+maxt = 100
 # maxt = 0.00125 *2
 
 ### check variables ###
@@ -196,7 +196,7 @@ while time/3600 < maxt:
     bc_upnode.set_q(Qb[int(time // 3600)])
     bc_upnode2.set_q(Qb2[int(time // 3600)])
 
-    """for i in range(3):
+    for i in range(3):
         bc_upQin[3-i] =  bc_upQin[2-i]
         bc_upQ2in[3-i] =  bc_upQ2in[2-i]
     bc_upQin[0] = Qb[int(time // 3600)]
@@ -210,7 +210,7 @@ while time/3600 < maxt:
         bc_dnQout[3-i] =  bc_dnQout[2-i]
         total_Qout     += bc_dnQout[3-i]*AB4thcoeff[3-i]*dt
     bc_dnQout[0]       =  elements[-1].dnnoads[0].get_variable_q()
-    total_Qout += bc_dnQout[0]*AB4thcoeff[0]*dt """
+    total_Qout += bc_dnQout[0]*AB4thcoeff[0]*dt # """
 
     # main calculation
     calc_mainloop([elements, elements2], [nodes, nodes2], dt,H,Q,number_of_stage)
@@ -220,9 +220,16 @@ while time/3600 < maxt:
     Q = np.array(Q)
 
 
-    if Qb[int(time // 3600)]>200:
+    if Qb[int(time // 3600)]>2000:
         dt = 1
+        for taget_element in [elements, elements2]:
+            for target in taget_element:
+                target.set_Runge_Kutta_6th() ; number_of_stage = 6
     else:
+        for taget_element in [elements, elements2]:
+            for target in taget_element:
+                target.set_Runge_Kutta_4th() ; number_of_stage = 4
+                # target.set_Euler()                ; number_of_stage = 1
         dt = init_dt
 
     t = t+1

@@ -162,7 +162,7 @@ Qs = []
 
 time = 0
 t = 0
-# maxt = 10
+maxt = 10
 # maxt = 0.00125 *2
 
 ### check variables ###
@@ -172,12 +172,6 @@ total_Qout  = 0
 bc_upQin    = [0,0,0,0] ; bc_upQ2in   = [0,0,0,0]
 bc_dnQout   = [0,0,0,0]
 AB4thcoeff  = [55.0/24.0,-59.0/24.0,37.0/24.0,-9.0/24.0]
-# setup initial Qin for AdamsBashforth4th
-for i in range(4):
-    elements[0].solve_mass_equation(dt)
-    elements2[0].solve_mass_equation(dt)
-    bc_upQin[i] = Qb[0] ; bc_upQ2in[i] = Qb2[0]
-elements[0].set_depth(0) ; elements2[0].set_depth(0)
 q_plot = []  # 流量の縦断分布(プロット用)
 t_plot = []  # x座標(プロット用)# 計算開始時刻を記録
 start_time = timers.time()
@@ -220,9 +214,15 @@ while time/3600 < maxt:
     Q = np.array(Q)
 
 
-    if Qb[int(time // 3600)]>200:
+    if Qb[int(time // 3600)]>20000:
         dt = 1
+        for taget_element in [elements, elements2]:
+            for target in taget_element:
+                target.set_Runge_Kutta_6th() ; number_of_stage = 6
     else:
+        for taget_element in [elements, elements2]:
+            for target in taget_element:
+                target.set_Runge_Kutta_4th() ; number_of_stage = 4
         dt = init_dt
 
     t = t+1
@@ -235,8 +235,8 @@ while time/3600 < maxt:
         print(Q[int(len(elements)/2)])
         Hs.append(H[:len(elements)+1])
         Qs.append(Q[:len(elements)+1])
-        q_plot.append(elements[len(elements)//2].dnnoads[0].get_variable_q())
-        t_plot.append(time/3600)
+        # q_plot.append(elements[len(elements)//2].dnnoads[0].get_variable_q())
+        # t_plot.append(time/3600)
         print("time:",time/3600,"  [h]",r"Q(m^3/s):  dt=",dt)
 # """
 # 計算終了時刻を記録
