@@ -1,6 +1,5 @@
 from Element import Element
 from Node import Node
-from Plot import plot_results
 
 import numpy as np
 import pandas as pd
@@ -27,6 +26,7 @@ for i in range(sec.shape[0]):
             x.append(count*150)  # 150m間隔に格子を配置
             count = count +1
             #print(sec[i,j])
+print("number of elements:",len(zb))
 
 # 支川の地形配列の作成
 zb2 = []
@@ -55,7 +55,7 @@ x2 = np.array(x2)
 width2 = np.array(width2)
 
 # 直線流路化
-zb = np.linspace(zb[0], zb[-1], len(zb))
+# zb = np.linspace(zb[0], zb[-1], len(zb))
 
 zb = zb[::-1]
 x  = x[::-1]
@@ -69,7 +69,7 @@ width2 = width2[::-1]
 ib = (zb[-1]-zb[0])/(x[-1] - x[0] )
 
 # 流量データの読み込み
-init_dt = 2.5
+init_dt = 5
 dt = init_dt
 df = pd.read_csv("input/Boundary2.csv")
 Qb = list(df[df.keys()[1]])
@@ -139,12 +139,11 @@ elements[16].set_upnoad(nodes2[-1])
 
 for target_element in elements:  #本川
     # target_element.set_Euler()
-    target_element.set_AdamsBashforth4th()
-
+    target_element.set_AdamsBashforth4th(dt)
 
 for target_element in elements2: #支川
     # target_element.set_Euler()
-    target_element.set_AdamsBashforth4th()
+    target_element.set_AdamsBashforth4th(dt)
 
 # 初期条件
 for i in range(n_riv): #本川
@@ -165,26 +164,24 @@ Qs2 = []
 
 time = 0
 t = 0
-maxt = 400
-# maxt = 0.05
+maxt = 10
+# maxt = 0.00125 *2
 
 ### check variables ###
 total_Qin   = 0
 total_water = 0
 total_Qout  = 0
-bc_dnQin    = [0,0,0,0] ; bc_dnQ2in   = [0,0,0,0]
+bc_upQin    = [0,0,0,0] ; bc_upQ2in   = [0,0,0,0]
 bc_dnQout   = [0,0,0,0]
 AB4thcoeff  = [55.0/24.0,-59.0/24.0,37.0/24.0,-9.0/24.0]
 # setup initial Qin for AdamsBashforth4th
 for i in range(4):
     elements[0].solve_mass_equation(dt)
     elements2[0].solve_mass_equation(dt)
-    bc_dnQin[i] = Qb[0] ; bc_dnQ2in[i] = Qb2[0]
+    bc_upQin[i] = Qb[0] ; bc_upQ2in[i] = Qb2[0]
 elements[0].set_depth(0) ; elements2[0].set_depth(0)
 q_plot = []  # 流量の縦断分布(プロット用)
-t_plot = []  # x座標(プロット用)
-
-# 計算開始時刻を記録
+t_plot = []  # x座標(プロット用)# 計算開始時刻を記録
 start_time = timers.time()
 #####################
 ### 時間発展ループ ###
@@ -204,29 +201,30 @@ while time/3600 < maxt:
     # boundary contion
     bc_upnode.set_q(Qb[int(time // 3600)])
     bc_upnode2.set_q(Qb2[int(time // 3600)])
-    for i in range(3):
-        bc_dnQin[i+1] =  bc_dnQin[i]
-        bc_dnQ2in[i+1] =  bc_dnQ2in[i]
-    bc_dnQin[0] = Qb[int(time // 3600)]
-    bc_dnQ2in[0] = Qb2[int(time // 3600)]
-    for i in range(4):
-        total_Qin += bc_dnQin[i] *AB4thcoeff[i]*dt
-        total_Qin += bc_dnQ2in[i]*AB4thcoeff[i]*dt
-    bc_dnelement.set_depth(elements[n_riv-1].get_variable_depth())
 
+    for i in range(3):
+        bc_upQin[3-i] =  bc_upQin[2-i]
+        bc_upQ2in[3-i] =  bc_upQ2in[2-i]
+    bc_upQin[0] = Qb[int(time // 3600)]
+    bc_upQ2in[0] = Qb2[int(time // 3600)]
+    for i in range(4):
+        total_Qin += bc_upQin[i] *AB4thcoeff[i]*dt
+        total_Qin += bc_upQ2in[i]*AB4thcoeff[i]*dt
+    bc_dnelement.set_depth(elements[n_riv-1].get_variable_depth())
+    # Adams Bashforth採用時の本川下端での流出量計算
+    for i in range(3):
+        bc_dnQout[3-i] =  bc_dnQout[2-i]
+        total_Qout     += bc_dnQout[3-i]*AB4thcoeff[3-i]*dt
+    bc_dnQout[0]       =  elements[-1].dnnoads[0].get_variable_q()
+    total_Qout += bc_dnQout[0]*AB4thcoeff[0]*dt 
+
+    # main calculation
     for target_element in elements:
         target_element.solve_mass_equation(dt)       # 質量保存側
         h  = target_element.get_variable_depth()
         total_water += h*target_element.get_width()*150
         H.append(h)
 
-    # Adams Bashforth採用時の本川下端での流出量計算
-    for i in range(3):
-        bc_dnQout[i+1] =  bc_dnQout[i]
-        total_Qout     += bc_dnQout[i+1]*AB4thcoeff[i+1]*dt
-    bc_dnQout[0]       =  elements[-1].dnnoads[0].get_variable_q()
-    total_Qout += bc_dnQout[0]*AB4thcoeff[0]*dt
-    # total_Qout += elements[-1].dnnoads[0].get_variable_q()*dt  # Eluer法用
     for target_element in elements2:
         target_element.solve_mass_equation(dt)       # 質量保存側
         h2  = target_element.get_variable_depth()
@@ -249,7 +247,7 @@ while time/3600 < maxt:
     dt = init_dt
     t = t+1
     time = time+dt
-    # print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
+    # print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum/Qin:",(total_Qout+total_water-total_Qin)/total_Qin)
     # print(Qb[int(time // 3600)],Qb2[int(time // 3600)],dt,time/3600)
     if np.mod(time/3600,1)==0:
         print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)

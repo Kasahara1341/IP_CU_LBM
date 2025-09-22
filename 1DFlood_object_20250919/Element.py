@@ -15,8 +15,8 @@ class Element: #格子のオブジェクト
     def set_Euler(self):
         self.time_evo = Euler()
     #数値計算法の選択
-    def set_AdamsBashforth4th(self):
-        self.time_evo = AdamsBashforth4th()
+    def set_AdamsBashforth4th(self,dt):
+        self.time_evo = AdamsBashforth4th(dt)
 
     # 質量保存則
     def solve_mass_equation(self,dt):
@@ -77,19 +77,43 @@ class Euler:
         Element.set_depth(uppdated_depth)
 
 class AdamsBashforth4th:
-    def __init__(self) -> None:
-        # self.prev_time = [0,0,0,0]    # 可変dtに対応するなら必要
+    def __init__(self,dt) :
+        self.prev_time = [-1*dt,-2*dt,-3*dt,-4*dt]    # 可変dtに対応するなら必要
         self.coeff = [55.0/24.0, -59.0/24.0, 37.0/24.0, -9.0/24.0]
         self.prev_dh = [0,0,0,0]
+    # Lagrange補間多項式の積分をによる係数計算
+    def integrated_Lagrange4(self,index,dt):
+        t0 = self.prev_time[(0+index)%4]
+        t1 = self.prev_time[(1+index)%4]
+        t2 = self.prev_time[(2+index)%4]
+        t3 = self.prev_time[(3+index)%4]
+        time = max(t0,t1,t2,t3) + dt
+        coeff4 = 3.0*time**4.0 - 4.0*(t1+t2+t3)*time**3.0 + \
+            6.0*(t1*t2 + t2*t3 + t3*t1)*time**2.0 - 12.0*t1*t2*t3*time
+        coeff4 /= 12.0*(t0 - t1)*(t0 - t2)*(t0 - t3)
+        return coeff4
+    # 現在のprev_timeに基づいて係数を更新
+    def reset_coeff(self,dt):
+        sum_coeff = 0 
+        for i in range(4):
+            self.coeff[i] = self.integrated_Lagrange4(i,dt) - self.integrated_Lagrange4(i,0)
+            self.coeff[i] /= dt
+        sum_coeff = np.sum(self.coeff)
+        # 係数の和が1となるように正規化
+        for i in range(4):
+            self.coeff[i] /= sum_coeff
     # incrementリストを更新 [0]が最新，[3]が一番古い
-    def update_increment_list(self,Element):
+    def update_increment_list(self,Element,dt):
         for i in range(3):
-            self.prev_dh[i+1] = self.prev_dh[i]
+            self.prev_dh[3-i] = self.prev_dh[2-i]
+            self.prev_time[3-i] = self.prev_time[2-i]
         dh = Element.calc_increment()
         self.prev_dh[0] = dh
+        self.prev_time[0] = self.prev_time[0] + dt
     # 水深の時間発展
     def update_depth(self,Element,dt):
-        self.update_increment_list(Element)
+        self.update_increment_list(Element,dt)
+        self.reset_coeff(dt)
         sum_increment = 0
         for i in range(4):
             sum_increment += self.coeff[i]*self.prev_dh[i]
