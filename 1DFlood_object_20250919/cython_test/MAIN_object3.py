@@ -142,8 +142,8 @@ for taget_element in [elements, elements2]:
     for target in taget_element:
         # target.set_Euler()                ; number_of_stage = 1
         # target.set_AdamsBashforth4th(dt)  ; number_of_stage = 1
-        # target.set_Runge_Kutta_4th()      ; number_of_stage = 4
-        target.set_Runge_Kutta_6th()      ; number_of_stage = 6
+        target.set_Runge_Kutta_4th()      ; number_of_stage = 4
+        # target.set_Runge_Kutta_6th()      ; number_of_stage = 6
 
 # 初期条件
 for target in [elements, elements2]:
