@@ -1,5 +1,3 @@
-import cython
-import numpy as np
 cdef class Node:
     cdef double q
     cdef object down_element, up_element

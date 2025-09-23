@@ -1546,9 +1546,7 @@ struct __pyx_obj_7Element_Runge_Kutta_4th {
 };
 
 
-/* "Node.pxd":3
- * import cython
- * import numpy as np
+/* "Node.pxd":1
  * cdef class Node:             # <<<<<<<<<<<<<<
  *     cdef double q
  *     cdef object down_element, up_element
@@ -1601,9 +1599,7 @@ struct __pyx_vtabstruct_7Element_Runge_Kutta_4th {
 static struct __pyx_vtabstruct_7Element_Runge_Kutta_4th *__pyx_vtabptr_7Element_Runge_Kutta_4th;
 
 
-/* "Node.pxd":3
- * import cython
- * import numpy as np
+/* "Node.pxd":1
  * cdef class Node:             # <<<<<<<<<<<<<<
  *     cdef double q
  *     cdef object down_element, up_element
@@ -1775,6 +1771,28 @@ static CYTHON_INLINE int __Pyx_ListComp_Append(PyObject* list, PyObject* x) {
 #else
 #define __Pyx_ListComp_Append(L,x) PyList_Append(L,x)
 #endif
+
+/* GetItemInt.proto */
+#define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_Fast(o, (Py_ssize_t)i, is_list, wraparound, boundscheck) :\
+    (is_list ? (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL) :\
+               __Pyx_GetItemInt_Generic(o, to_py_func(i))))
+#define __Pyx_GetItemInt_List(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_List_Fast(o, (Py_ssize_t)i, wraparound, boundscheck) :\
+    (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL))
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck);
+#define __Pyx_GetItemInt_Tuple(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_Tuple_Fast(o, (Py_ssize_t)i, wraparound, boundscheck) :\
+    (PyErr_SetString(PyExc_IndexError, "tuple index out of range"), (PyObject*)NULL))
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck);
+static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j);
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
+                                                     int is_list, int wraparound, int boundscheck);
 
 /* ExtTypeTest.proto */
 static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
@@ -2321,11 +2339,10 @@ static int __Pyx_State_RemoveModule(void*);
 
 /* Module declarations from "Element" */
 
-/* Module declarations from "cython" */
-
 /* Module declarations from "Node" */
 
 /* Module declarations from "Calc_equation" */
+static void __pyx_f_13Calc_equation__calc_mainloop(PyObject *, PyObject *, double, PyObject *, PyObject *, int); /*proto*/
 static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *, PyObject *, double, PyObject *, PyObject *, int, int __pyx_skip_dispatch); /*proto*/
 /* #### Code section: typeinfo ### */
 /* #### Code section: before_global_var ### */
@@ -2342,6 +2359,7 @@ static const char __pyx_k_H[] = "H";
 static const char __pyx_k_Q[] = "Q";
 static const char __pyx_k_dt[] = "dt";
 static const char __pyx_k_pop[] = "pop";
+static const char __pyx_k_Cr_1[] = "\200\001\340\004\022\220!\220>\240\033\250C\250r\260\022\2601";
 static const char __pyx_k_func[] = "__func__";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
@@ -2361,7 +2379,6 @@ static const char __pyx_k_elements_list[] = "elements_list";
 static const char __pyx_k_Calc_equation_pyx[] = "Calc_equation.pyx";
 static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
-static const char __pyx_k_ar_d_q_ar_4uA_aq_a_aq_O1_q_2_q[] = "\200\001\360\022\000\005\037\230a\230r\240\024\240[\260\016\270d\300%\300q\330\004\036\230a\230r\240\024\240[\260\013\2704\270u\300A\360\010\000\005\t\210\t\220\025\220a\220q\330\010\014\320\014\036\230a\330\014\032\320\032.\250a\250q\330\010\014\210O\2301\330\014\027\320\027/\250q\360\006\000\005\t\320\010\032\230!\330\010\t\210\027\220\001\220\036\320\0372\260!\330\004\010\210\017\220q\330\010\t\210\027\220\001\220\033\230O\2501";
 static const char __pyx_k_Note_that_Cython_is_deliberately[] = "Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.";
 /* #### Code section: decls ### */
 static PyObject *__pyx_pf_13Calc_equation_calc_mainloop(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_elements_list, PyObject *__pyx_v_nodes_list, double __pyx_v_dt, PyObject *__pyx_v_H, PyObject *__pyx_v_Q, int __pyx_v_stages); /* proto */
@@ -2529,24 +2546,18 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
 /* "Calc_equation.pyx":5
  * from Node cimport Node
  * 
- * cpdef void calc_mainloop(list elements_list, list nodes_list,             # <<<<<<<<<<<<<<
+ * cdef void _calc_mainloop(list elements_list, list nodes_list,             # <<<<<<<<<<<<<<
  *                   double dt, list H, list Q, int stages):
  *     cdef int stage
 */
 
-static PyObject *__pyx_pw_13Calc_equation_1calc_mainloop(PyObject *__pyx_self, 
-#if CYTHON_METH_FASTCALL
-PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
-#else
-PyObject *__pyx_args, PyObject *__pyx_kwds
-#endif
-); /*proto*/
-static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *__pyx_v_elements_list, PyObject *__pyx_v_nodes_list, double __pyx_v_dt, PyObject *__pyx_v_H, PyObject *__pyx_v_Q, int __pyx_v_stages, CYTHON_UNUSED int __pyx_skip_dispatch) {
+static void __pyx_f_13Calc_equation__calc_mainloop(PyObject *__pyx_v_elements_list, PyObject *__pyx_v_nodes_list, double __pyx_v_dt, PyObject *__pyx_v_H, PyObject *__pyx_v_Q, int __pyx_v_stages) {
   CYTHON_UNUSED int __pyx_v_stage;
   struct __pyx_obj_7Element_Element *__pyx_v_target_element = 0;
   struct __pyx_obj_4Node_Node *__pyx_v_target_node = 0;
   PyObject *__pyx_v_flat_elements = 0;
   PyObject *__pyx_v_flat_nodes = 0;
+  Py_ssize_t __pyx_v_i;
   PyObject *__pyx_7genexpr__pyx_v_sublist = NULL;
   PyObject *__pyx_7genexpr__pyx_v_e = NULL;
   PyObject *__pyx_8genexpr1__pyx_v_sublist = NULL;
@@ -2562,12 +2573,13 @@ static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *__pyx_v_elements_lis
   int __pyx_t_8;
   int __pyx_t_9;
   int __pyx_t_10;
-  double __pyx_t_11;
-  int __pyx_t_12;
+  Py_ssize_t __pyx_t_11;
+  double __pyx_t_12;
+  int __pyx_t_13;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("calc_mainloop", 0);
+  __Pyx_RefNannySetupContext("_calc_mainloop", 0);
 
   /* "Calc_equation.pyx":14
  * 
@@ -2769,8 +2781,8 @@ static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *__pyx_v_elements_lis
  * 
  *     # Iwasaki
  *     for stage in range(stages):             # <<<<<<<<<<<<<<
- *         for target_element in flat_elements:
- *             target_element.solve_mass_equation(dt)   #
+ *         for i in range(len(flat_elements)):
+ *             target_element = flat_elements[i]
 */
   __pyx_t_8 = __pyx_v_stages;
   __pyx_t_9 = __pyx_t_8;
@@ -2780,196 +2792,164 @@ static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *__pyx_v_elements_lis
     /* "Calc_equation.pyx":20
  *     # Iwasaki
  *     for stage in range(stages):
- *         for target_element in flat_elements:             # <<<<<<<<<<<<<<
+ *         for i in range(len(flat_elements)):             # <<<<<<<<<<<<<<
+ *             target_element = flat_elements[i]
  *             target_element.solve_mass_equation(dt)   #
- *         for target_node in flat_nodes:
 */
-    __pyx_t_1 = __pyx_v_flat_elements; __Pyx_INCREF(__pyx_t_1);
-    __pyx_t_3 = 0;
-    for (;;) {
-      {
-        Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 20, __pyx_L1_error)
-        #endif
-        if (__pyx_t_3 >= __pyx_temp) break;
-      }
-      __pyx_t_2 = __Pyx_PyList_GetItemRef(__pyx_t_1, __pyx_t_3);
-      ++__pyx_t_3;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 20, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_mstate_global->__pyx_ptype_7Element_Element))))) __PYX_ERR(0, 20, __pyx_L1_error)
-      __Pyx_XDECREF_SET(__pyx_v_target_element, ((struct __pyx_obj_7Element_Element *)__pyx_t_2));
-      __pyx_t_2 = 0;
+    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_v_flat_elements); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 20, __pyx_L1_error)
+    __pyx_t_5 = __pyx_t_3;
+    for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_5; __pyx_t_11+=1) {
+      __pyx_v_i = __pyx_t_11;
 
       /* "Calc_equation.pyx":21
  *     for stage in range(stages):
- *         for target_element in flat_elements:
- *             target_element.solve_mass_equation(dt)   #             # <<<<<<<<<<<<<<
- *         for target_node in flat_nodes:
- *             target_node.solve_momentum_equation()
-*/
-      ((struct __pyx_vtabstruct_7Element_Element *)__pyx_v_target_element->__pyx_vtab)->solve_mass_equation(__pyx_v_target_element, __pyx_v_dt); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 21, __pyx_L1_error)
-
-      /* "Calc_equation.pyx":20
- *     # Iwasaki
- *     for stage in range(stages):
- *         for target_element in flat_elements:             # <<<<<<<<<<<<<<
+ *         for i in range(len(flat_elements)):
+ *             target_element = flat_elements[i]             # <<<<<<<<<<<<<<
  *             target_element.solve_mass_equation(dt)   #
- *         for target_node in flat_nodes:
+ *         for i in range(len(flat_nodes)):
 */
-    }
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-    /* "Calc_equation.pyx":22
- *         for target_element in flat_elements:
- *             target_element.solve_mass_equation(dt)   #
- *         for target_node in flat_nodes:             # <<<<<<<<<<<<<<
- *             target_node.solve_momentum_equation()
- * 
-*/
-    __pyx_t_1 = __pyx_v_flat_nodes; __Pyx_INCREF(__pyx_t_1);
-    __pyx_t_3 = 0;
-    for (;;) {
-      {
-        Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 22, __pyx_L1_error)
-        #endif
-        if (__pyx_t_3 >= __pyx_temp) break;
-      }
-      __pyx_t_2 = __Pyx_PyList_GetItemRef(__pyx_t_1, __pyx_t_3);
-      ++__pyx_t_3;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_mstate_global->__pyx_ptype_4Node_Node))))) __PYX_ERR(0, 22, __pyx_L1_error)
-      __Pyx_XDECREF_SET(__pyx_v_target_node, ((struct __pyx_obj_4Node_Node *)__pyx_t_2));
-      __pyx_t_2 = 0;
-
-      /* "Calc_equation.pyx":23
- *             target_element.solve_mass_equation(dt)   #
- *         for target_node in flat_nodes:
- *             target_node.solve_momentum_equation()             # <<<<<<<<<<<<<<
- * 
- *     #
-*/
-      ((struct __pyx_vtabstruct_4Node_Node *)__pyx_v_target_node->__pyx_vtab)->solve_momentum_equation(__pyx_v_target_node); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 23, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_flat_elements, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 1, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_7Element_Element))))) __PYX_ERR(0, 21, __pyx_L1_error)
+      __Pyx_XDECREF_SET(__pyx_v_target_element, ((struct __pyx_obj_7Element_Element *)__pyx_t_1));
+      __pyx_t_1 = 0;
 
       /* "Calc_equation.pyx":22
- *         for target_element in flat_elements:
+ *         for i in range(len(flat_elements)):
+ *             target_element = flat_elements[i]
+ *             target_element.solve_mass_equation(dt)   #             # <<<<<<<<<<<<<<
+ *         for i in range(len(flat_nodes)):
+ *             target_node = flat_nodes[i]
+*/
+      ((struct __pyx_vtabstruct_7Element_Element *)__pyx_v_target_element->__pyx_vtab)->solve_mass_equation(__pyx_v_target_element, __pyx_v_dt); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 22, __pyx_L1_error)
+    }
+
+    /* "Calc_equation.pyx":23
+ *             target_element = flat_elements[i]
  *             target_element.solve_mass_equation(dt)   #
- *         for target_node in flat_nodes:             # <<<<<<<<<<<<<<
+ *         for i in range(len(flat_nodes)):             # <<<<<<<<<<<<<<
+ *             target_node = flat_nodes[i]
+ *             target_node.solve_momentum_equation()
+*/
+    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_v_flat_nodes); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 23, __pyx_L1_error)
+    __pyx_t_5 = __pyx_t_3;
+    for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_5; __pyx_t_11+=1) {
+      __pyx_v_i = __pyx_t_11;
+
+      /* "Calc_equation.pyx":24
+ *             target_element.solve_mass_equation(dt)   #
+ *         for i in range(len(flat_nodes)):
+ *             target_node = flat_nodes[i]             # <<<<<<<<<<<<<<
  *             target_node.solve_momentum_equation()
  * 
 */
+      __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_flat_nodes, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 1, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 24, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_4Node_Node))))) __PYX_ERR(0, 24, __pyx_L1_error)
+      __Pyx_XDECREF_SET(__pyx_v_target_node, ((struct __pyx_obj_4Node_Node *)__pyx_t_1));
+      __pyx_t_1 = 0;
+
+      /* "Calc_equation.pyx":25
+ *         for i in range(len(flat_nodes)):
+ *             target_node = flat_nodes[i]
+ *             target_node.solve_momentum_equation()             # <<<<<<<<<<<<<<
+ * 
+ * #    #
+*/
+      ((struct __pyx_vtabstruct_4Node_Node *)__pyx_v_target_node->__pyx_vtab)->solve_momentum_equation(__pyx_v_target_node); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 25, __pyx_L1_error)
     }
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "Calc_equation.pyx":26
+  /* "Calc_equation.pyx":28
  * 
- *     #
- *     for target_element in flat_elements:             # <<<<<<<<<<<<<<
+ * #    #
+ *     for i in range(len(flat_elements)):             # <<<<<<<<<<<<<<
+ *         target_element = flat_elements[i]
  *         H.append(target_element.get_variable_depth())
- *     for target_node in flat_nodes:
 */
-  __pyx_t_1 = __pyx_v_flat_elements; __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_3 = 0;
-  for (;;) {
-    {
-      Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
-      #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 26, __pyx_L1_error)
-      #endif
-      if (__pyx_t_3 >= __pyx_temp) break;
-    }
-    __pyx_t_2 = __Pyx_PyList_GetItemRef(__pyx_t_1, __pyx_t_3);
-    ++__pyx_t_3;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_mstate_global->__pyx_ptype_7Element_Element))))) __PYX_ERR(0, 26, __pyx_L1_error)
-    __Pyx_XDECREF_SET(__pyx_v_target_element, ((struct __pyx_obj_7Element_Element *)__pyx_t_2));
-    __pyx_t_2 = 0;
+  __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_v_flat_elements); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_t_5 = __pyx_t_3;
+  for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_5; __pyx_t_11+=1) {
+    __pyx_v_i = __pyx_t_11;
 
-    /* "Calc_equation.pyx":27
- *     #
- *     for target_element in flat_elements:
+    /* "Calc_equation.pyx":29
+ * #    #
+ *     for i in range(len(flat_elements)):
+ *         target_element = flat_elements[i]             # <<<<<<<<<<<<<<
+ *         H.append(target_element.get_variable_depth())
+ *     for i in range(len(flat_nodes)):
+*/
+    __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_flat_elements, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 1, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 29, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_7Element_Element))))) __PYX_ERR(0, 29, __pyx_L1_error)
+    __Pyx_XDECREF_SET(__pyx_v_target_element, ((struct __pyx_obj_7Element_Element *)__pyx_t_1));
+    __pyx_t_1 = 0;
+
+    /* "Calc_equation.pyx":30
+ *     for i in range(len(flat_elements)):
+ *         target_element = flat_elements[i]
  *         H.append(target_element.get_variable_depth())             # <<<<<<<<<<<<<<
- *     for target_node in flat_nodes:
- *         Q.append(target_node.get_variable_q())
+ *     for i in range(len(flat_nodes)):
+ *         target_node = flat_nodes[i]
 */
     if (unlikely(__pyx_v_H == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "append");
-      __PYX_ERR(0, 27, __pyx_L1_error)
+      __PYX_ERR(0, 30, __pyx_L1_error)
     }
-    __pyx_t_11 = ((struct __pyx_vtabstruct_7Element_Element *)__pyx_v_target_element->__pyx_vtab)->get_variable_depth(__pyx_v_target_element, 0); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 27, __pyx_L1_error)
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 27, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_H, __pyx_t_2); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 27, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-    /* "Calc_equation.pyx":26
- * 
- *     #
- *     for target_element in flat_elements:             # <<<<<<<<<<<<<<
- *         H.append(target_element.get_variable_depth())
- *     for target_node in flat_nodes:
-*/
+    __pyx_t_12 = ((struct __pyx_vtabstruct_7Element_Element *)__pyx_v_target_element->__pyx_vtab)->get_variable_depth(__pyx_v_target_element, 0); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 30, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_13 = __Pyx_PyList_Append(__pyx_v_H, __pyx_t_1); if (unlikely(__pyx_t_13 == ((int)-1))) __PYX_ERR(0, 30, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Calc_equation.pyx":28
- *     for target_element in flat_elements:
+  /* "Calc_equation.pyx":31
+ *         target_element = flat_elements[i]
  *         H.append(target_element.get_variable_depth())
- *     for target_node in flat_nodes:             # <<<<<<<<<<<<<<
+ *     for i in range(len(flat_nodes)):             # <<<<<<<<<<<<<<
+ *         target_node = flat_nodes[i]
  *         Q.append(target_node.get_variable_q())
 */
-  __pyx_t_1 = __pyx_v_flat_nodes; __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_3 = 0;
-  for (;;) {
-    {
-      Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
-      #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 28, __pyx_L1_error)
-      #endif
-      if (__pyx_t_3 >= __pyx_temp) break;
-    }
-    __pyx_t_2 = __Pyx_PyList_GetItemRef(__pyx_t_1, __pyx_t_3);
-    ++__pyx_t_3;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 28, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_mstate_global->__pyx_ptype_4Node_Node))))) __PYX_ERR(0, 28, __pyx_L1_error)
-    __Pyx_XDECREF_SET(__pyx_v_target_node, ((struct __pyx_obj_4Node_Node *)__pyx_t_2));
-    __pyx_t_2 = 0;
+  __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_v_flat_nodes); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_5 = __pyx_t_3;
+  for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_5; __pyx_t_11+=1) {
+    __pyx_v_i = __pyx_t_11;
 
-    /* "Calc_equation.pyx":29
+    /* "Calc_equation.pyx":32
  *         H.append(target_element.get_variable_depth())
- *     for target_node in flat_nodes:
+ *     for i in range(len(flat_nodes)):
+ *         target_node = flat_nodes[i]             # <<<<<<<<<<<<<<
+ *         Q.append(target_node.get_variable_q())
+ * 
+*/
+    __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_flat_nodes, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 1, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_mstate_global->__pyx_ptype_4Node_Node))))) __PYX_ERR(0, 32, __pyx_L1_error)
+    __Pyx_XDECREF_SET(__pyx_v_target_node, ((struct __pyx_obj_4Node_Node *)__pyx_t_1));
+    __pyx_t_1 = 0;
+
+    /* "Calc_equation.pyx":33
+ *     for i in range(len(flat_nodes)):
+ *         target_node = flat_nodes[i]
  *         Q.append(target_node.get_variable_q())             # <<<<<<<<<<<<<<
+ * 
+ * 
 */
     if (unlikely(__pyx_v_Q == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "append");
-      __PYX_ERR(0, 29, __pyx_L1_error)
+      __PYX_ERR(0, 33, __pyx_L1_error)
     }
-    __pyx_t_11 = ((struct __pyx_vtabstruct_4Node_Node *)__pyx_v_target_node->__pyx_vtab)->get_variable_q(__pyx_v_target_node); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 29, __pyx_L1_error)
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 29, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_Q, __pyx_t_2); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 29, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-    /* "Calc_equation.pyx":28
- *     for target_element in flat_elements:
- *         H.append(target_element.get_variable_depth())
- *     for target_node in flat_nodes:             # <<<<<<<<<<<<<<
- *         Q.append(target_node.get_variable_q())
-*/
+    __pyx_t_12 = ((struct __pyx_vtabstruct_4Node_Node *)__pyx_v_target_node->__pyx_vtab)->get_variable_q(__pyx_v_target_node); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_13 = __Pyx_PyList_Append(__pyx_v_Q, __pyx_t_1); if (unlikely(__pyx_t_13 == ((int)-1))) __PYX_ERR(0, 33, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "Calc_equation.pyx":5
  * from Node cimport Node
  * 
- * cpdef void calc_mainloop(list elements_list, list nodes_list,             # <<<<<<<<<<<<<<
+ * cdef void _calc_mainloop(list elements_list, list nodes_list,             # <<<<<<<<<<<<<<
  *                   double dt, list H, list Q, int stages):
  *     cdef int stage
 */
@@ -2981,7 +2961,7 @@ static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *__pyx_v_elements_lis
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_7);
-  __Pyx_AddTraceback("Calc_equation.calc_mainloop", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("Calc_equation._calc_mainloop", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_target_element);
   __Pyx_XDECREF((PyObject *)__pyx_v_target_node);
@@ -2992,6 +2972,48 @@ static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *__pyx_v_elements_lis
   __Pyx_XDECREF(__pyx_8genexpr1__pyx_v_sublist);
   __Pyx_XDECREF(__pyx_8genexpr1__pyx_v_e);
   __Pyx_RefNannyFinishContext();
+}
+
+/* "Calc_equation.pyx":36
+ * 
+ * 
+ * cpdef void calc_mainloop(list elements_list, list nodes_list,             # <<<<<<<<<<<<<<
+ *                   double dt, list H, list Q, int stages):
+ *     _calc_mainloop(elements_list,nodes_list,dt,H,Q,stages)
+*/
+
+static PyObject *__pyx_pw_13Calc_equation_1calc_mainloop(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static void __pyx_f_13Calc_equation_calc_mainloop(PyObject *__pyx_v_elements_list, PyObject *__pyx_v_nodes_list, double __pyx_v_dt, PyObject *__pyx_v_H, PyObject *__pyx_v_Q, int __pyx_v_stages, CYTHON_UNUSED int __pyx_skip_dispatch) {
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+
+  /* "Calc_equation.pyx":38
+ * cpdef void calc_mainloop(list elements_list, list nodes_list,
+ *                   double dt, list H, list Q, int stages):
+ *     _calc_mainloop(elements_list,nodes_list,dt,H,Q,stages)             # <<<<<<<<<<<<<<
+*/
+  __pyx_f_13Calc_equation__calc_mainloop(__pyx_v_elements_list, __pyx_v_nodes_list, __pyx_v_dt, __pyx_v_H, __pyx_v_Q, __pyx_v_stages); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L1_error)
+
+  /* "Calc_equation.pyx":36
+ * 
+ * 
+ * cpdef void calc_mainloop(list elements_list, list nodes_list,             # <<<<<<<<<<<<<<
+ *                   double dt, list H, list Q, int stages):
+ *     _calc_mainloop(elements_list,nodes_list,dt,H,Q,stages)
+*/
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("Calc_equation.calc_mainloop", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_L0:;
 }
 
 /* Python wrapper */
@@ -3038,67 +3060,67 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_elements_list,&__pyx_mstate_global->__pyx_n_u_nodes_list,&__pyx_mstate_global->__pyx_n_u_dt,&__pyx_mstate_global->__pyx_n_u_H,&__pyx_mstate_global->__pyx_n_u_Q,&__pyx_mstate_global->__pyx_n_u_stages,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 5, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 36, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  6:
         values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 5, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 36, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 5, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 36, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 5, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 36, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 5, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 36, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 5, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 36, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 5, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 36, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "calc_mainloop", 0) < 0) __PYX_ERR(0, 5, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "calc_mainloop", 0) < 0) __PYX_ERR(0, 36, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 6; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("calc_mainloop", 1, 6, 6, i); __PYX_ERR(0, 5, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("calc_mainloop", 1, 6, 6, i); __PYX_ERR(0, 36, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 6)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 5, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 36, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 5, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 36, __pyx_L3_error)
       values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 5, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 36, __pyx_L3_error)
       values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 5, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 36, __pyx_L3_error)
       values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 5, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 36, __pyx_L3_error)
       values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 5, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 36, __pyx_L3_error)
     }
     __pyx_v_elements_list = ((PyObject*)values[0]);
     __pyx_v_nodes_list = ((PyObject*)values[1]);
-    __pyx_v_dt = __Pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_dt == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 6, __pyx_L3_error)
+    __pyx_v_dt = __Pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_dt == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 37, __pyx_L3_error)
     __pyx_v_H = ((PyObject*)values[3]);
     __pyx_v_Q = ((PyObject*)values[4]);
-    __pyx_v_stages = __Pyx_PyLong_As_int(values[5]); if (unlikely((__pyx_v_stages == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 6, __pyx_L3_error)
+    __pyx_v_stages = __Pyx_PyLong_As_int(values[5]); if (unlikely((__pyx_v_stages == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 37, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("calc_mainloop", 1, 6, 6, __pyx_nargs); __PYX_ERR(0, 5, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("calc_mainloop", 1, 6, 6, __pyx_nargs); __PYX_ERR(0, 36, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3109,10 +3131,10 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_elements_list), (&PyList_Type), 1, "elements_list", 1))) __PYX_ERR(0, 5, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_nodes_list), (&PyList_Type), 1, "nodes_list", 1))) __PYX_ERR(0, 5, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_H), (&PyList_Type), 1, "H", 1))) __PYX_ERR(0, 6, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Q), (&PyList_Type), 1, "Q", 1))) __PYX_ERR(0, 6, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_elements_list), (&PyList_Type), 1, "elements_list", 1))) __PYX_ERR(0, 36, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_nodes_list), (&PyList_Type), 1, "nodes_list", 1))) __PYX_ERR(0, 36, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_H), (&PyList_Type), 1, "H", 1))) __PYX_ERR(0, 37, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_Q), (&PyList_Type), 1, "Q", 1))) __PYX_ERR(0, 37, __pyx_L1_error)
   __pyx_r = __pyx_pf_13Calc_equation_calc_mainloop(__pyx_self, __pyx_v_elements_list, __pyx_v_nodes_list, __pyx_v_dt, __pyx_v_H, __pyx_v_Q, __pyx_v_stages);
 
   /* function exit code */
@@ -3141,8 +3163,8 @@ static PyObject *__pyx_pf_13Calc_equation_calc_mainloop(CYTHON_UNUSED PyObject *
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("calc_mainloop", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_f_13Calc_equation_calc_mainloop(__pyx_v_elements_list, __pyx_v_nodes_list, __pyx_v_dt, __pyx_v_H, __pyx_v_Q, __pyx_v_stages, 1); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 5, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_f_13Calc_equation_calc_mainloop(__pyx_v_elements_list, __pyx_v_nodes_list, __pyx_v_dt, __pyx_v_H, __pyx_v_Q, __pyx_v_stages, 1); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3246,7 +3268,7 @@ static int __Pyx_modinit_type_import_code(__pyx_mstatetype *__pyx_mstate) {
   __Pyx_ImportType_CheckSize_Warn_3_1_4); if (!__pyx_mstate->__pyx_ptype_7Element_Runge_Kutta_4th) __PYX_ERR(1, 13, __pyx_L1_error)
   __pyx_vtabptr_7Element_Runge_Kutta_4th = (struct __pyx_vtabstruct_7Element_Runge_Kutta_4th*)__Pyx_GetVtable(__pyx_mstate->__pyx_ptype_7Element_Runge_Kutta_4th); if (unlikely(!__pyx_vtabptr_7Element_Runge_Kutta_4th)) __PYX_ERR(1, 13, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyImport_ImportModule("Node"); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 3, __pyx_L1_error)
+  __pyx_t_1 = PyImport_ImportModule("Node"); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_mstate->__pyx_ptype_4Node_Node = __Pyx_ImportType_3_1_4(__pyx_t_1, "Node", "Node",
   #if defined(PYPY_VERSION_NUM) && PYPY_VERSION_NUM < 0x050B0000
@@ -3256,8 +3278,8 @@ static int __Pyx_modinit_type_import_code(__pyx_mstatetype *__pyx_mstate) {
   #else
   sizeof(struct __pyx_obj_4Node_Node), __PYX_GET_STRUCT_ALIGNMENT_3_1_4(struct __pyx_obj_4Node_Node),
   #endif
-  __Pyx_ImportType_CheckSize_Warn_3_1_4); if (!__pyx_mstate->__pyx_ptype_4Node_Node) __PYX_ERR(2, 3, __pyx_L1_error)
-  __pyx_vtabptr_4Node_Node = (struct __pyx_vtabstruct_4Node_Node*)__Pyx_GetVtable(__pyx_mstate->__pyx_ptype_4Node_Node); if (unlikely(!__pyx_vtabptr_4Node_Node)) __PYX_ERR(2, 3, __pyx_L1_error)
+  __Pyx_ImportType_CheckSize_Warn_3_1_4); if (!__pyx_mstate->__pyx_ptype_4Node_Node) __PYX_ERR(2, 1, __pyx_L1_error)
+  __pyx_vtabptr_4Node_Node = (struct __pyx_vtabstruct_4Node_Node*)__Pyx_GetVtable(__pyx_mstate->__pyx_ptype_4Node_Node); if (unlikely(!__pyx_vtabptr_4Node_Node)) __PYX_ERR(2, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -3567,16 +3589,16 @@ __Pyx_RefNannySetupContext("PyInit_Calc_equation", 0);
   (void)__Pyx_modinit_function_import_code(__pyx_mstate);
   /*--- Execution code ---*/
 
-  /* "Calc_equation.pyx":5
- * from Node cimport Node
+  /* "Calc_equation.pyx":36
+ * 
  * 
  * cpdef void calc_mainloop(list elements_list, list nodes_list,             # <<<<<<<<<<<<<<
  *                   double dt, list H, list Q, int stages):
- *     cdef int stage
+ *     _calc_mainloop(elements_list,nodes_list,dt,H,Q,stages)
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_13Calc_equation_1calc_mainloop, 0, __pyx_mstate_global->__pyx_n_u_calc_mainloop, NULL, __pyx_mstate_global->__pyx_n_u_Calc_equation, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_13Calc_equation_1calc_mainloop, 0, __pyx_mstate_global->__pyx_n_u_calc_mainloop, NULL, __pyx_mstate_global->__pyx_n_u_Calc_equation, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_calc_mainloop, __pyx_t_2) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_calc_mainloop, __pyx_t_2) < 0) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "Calc_equation.pyx":1
@@ -3714,8 +3736,8 @@ static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
             unsigned int num_kwonly_args : 1;
             unsigned int nlocals : 3;
             unsigned int flags : 10;
-            unsigned int first_line : 3;
-            unsigned int line_table_length : 12;
+            unsigned int first_line : 6;
+            unsigned int line_table_length : 9;
         } __Pyx_PyCode_New_function_description;
 /* NewCodeObj.proto */
 static PyObject* __Pyx_PyCode_New(
@@ -3732,9 +3754,9 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {6, 0, 0, 6, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 5, 132};
+    const __Pyx_PyCode_New_function_description descr = {6, 0, 0, 6, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 36, 19};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_elements_list, __pyx_mstate->__pyx_n_u_nodes_list, __pyx_mstate->__pyx_n_u_dt, __pyx_mstate->__pyx_n_u_H, __pyx_mstate->__pyx_n_u_Q, __pyx_mstate->__pyx_n_u_stages};
-    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_Calc_equation_pyx, __pyx_mstate->__pyx_n_u_calc_mainloop, __pyx_k_ar_d_q_ar_4uA_aq_a_aq_O1_q_2_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_Calc_equation_pyx, __pyx_mstate->__pyx_n_u_calc_mainloop, __pyx_k_Cr_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
   Py_DECREF(tuple_dedup_map);
   return 0;
@@ -3950,6 +3972,99 @@ static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
             "name '%U' is not defined", name);
     }
     return result;
+}
+
+/* GetItemInt */
+static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
+    PyObject *r;
+    if (unlikely(!j)) return NULL;
+    r = PyObject_GetItem(o, j);
+    Py_DECREF(j);
+    return r;
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
+                                                              CYTHON_NCP_UNUSED int wraparound,
+                                                              CYTHON_NCP_UNUSED int boundscheck) {
+#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS && !CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS
+    Py_ssize_t wrapped_i = i;
+    if (wraparound & unlikely(i < 0)) {
+        wrapped_i += PyList_GET_SIZE(o);
+    }
+    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyList_GET_SIZE(o)))) {
+        PyObject *r = PyList_GET_ITEM(o, wrapped_i);
+        Py_INCREF(r);
+        return r;
+    }
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
+#else
+    return PySequence_GetItem(o, i);
+#endif
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
+                                                              CYTHON_NCP_UNUSED int wraparound,
+                                                              CYTHON_NCP_UNUSED int boundscheck) {
+#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS
+    Py_ssize_t wrapped_i = i;
+    if (wraparound & unlikely(i < 0)) {
+        wrapped_i += PyTuple_GET_SIZE(o);
+    }
+    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyTuple_GET_SIZE(o)))) {
+        PyObject *r = PyTuple_GET_ITEM(o, wrapped_i);
+        Py_INCREF(r);
+        return r;
+    }
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
+#else
+    return PySequence_GetItem(o, i);
+#endif
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i, int is_list,
+                                                     CYTHON_NCP_UNUSED int wraparound,
+                                                     CYTHON_NCP_UNUSED int boundscheck) {
+#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE && !CYTHON_AVOID_BORROWED_REFS && CYTHON_USE_TYPE_SLOTS
+    if (is_list || PyList_CheckExact(o)) {
+        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyList_GET_SIZE(o);
+        if ((!boundscheck) || (likely(__Pyx_is_valid_index(n, PyList_GET_SIZE(o))))) {
+            return __Pyx_PyList_GetItemRef(o, n);
+        }
+    }
+    else if (PyTuple_CheckExact(o)) {
+        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyTuple_GET_SIZE(o);
+        if ((!boundscheck) || likely(__Pyx_is_valid_index(n, PyTuple_GET_SIZE(o)))) {
+            PyObject *r = PyTuple_GET_ITEM(o, n);
+            Py_INCREF(r);
+            return r;
+        }
+    } else {
+        PyMappingMethods *mm = Py_TYPE(o)->tp_as_mapping;
+        PySequenceMethods *sm = Py_TYPE(o)->tp_as_sequence;
+        if (mm && mm->mp_subscript) {
+            PyObject *r, *key = PyLong_FromSsize_t(i);
+            if (unlikely(!key)) return NULL;
+            r = mm->mp_subscript(o, key);
+            Py_DECREF(key);
+            return r;
+        }
+        if (likely(sm && sm->sq_item)) {
+            if (wraparound && unlikely(i < 0) && likely(sm->sq_length)) {
+                Py_ssize_t l = sm->sq_length(o);
+                if (likely(l >= 0)) {
+                    i += l;
+                } else {
+                    if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+                        return NULL;
+                    PyErr_Clear();
+                }
+            }
+            return sm->sq_item(o, i);
+        }
+    }
+#else
+    if (is_list || !PyMapping_Check(o)) {
+        return PySequence_GetItem(o, i);
+    }
+#endif
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
 }
 
 /* ExtTypeTest */

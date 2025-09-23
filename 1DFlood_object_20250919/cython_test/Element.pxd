@@ -2,7 +2,7 @@ cdef class Element: #格子のオブジェクト
     cdef double position, elev, coeff, width, depth, old_depth
     cdef object time_evo
     cdef list upnoads, dnnoads
-    cdef void solve_mass_equation(self, double)
+    cdef void solve_mass_equation(self, double )
     cdef double calc_increment(self)
     cpdef double get_variable_depth(self)
     cdef double get_position(self)

@@ -162,7 +162,7 @@ Qs = []
 
 time = 0
 t = 0
-maxt = 100
+maxt = 1
 # maxt = 0.00125 *2
 
 ### check variables ###
@@ -245,7 +245,10 @@ while time/3600 < maxt:
         q_plot.append(elements[len(elements)//2].dnnoads[0].get_variable_q())
         t_plot.append(time/3600)
         print("time:",time/3600,"  [h]",r"Q(m^3/s):  dt=",dt)
-# """
+print("zb",zb)
+print("zb2",zb2)
+print("zb2 dn",zb2[-1],"zb[16]",zb[16],elements[16].elev)
+"""
 # 計算終了時刻を記録
 end_time = timers.time()
 # 経過時間を表示

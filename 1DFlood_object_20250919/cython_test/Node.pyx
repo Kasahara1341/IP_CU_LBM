@@ -1,3 +1,4 @@
+from Element cimport Element
 import numpy as np
 cdef class Node:
     def __init__(self):
@@ -32,17 +33,20 @@ cdef class Node:
     
     # 運動方程式(拡散波近似)
     cdef void solve_momentum_equation(self):
-        elevup = self.up_element.get_elev()
-        elevdn = self.down_element.get_elev()
-        Hup     = elevup + self.up_element.get_variable_depth()
-        Hdn     = elevdn + self.down_element.get_variable_depth()
-        hup     = self.up_element.get_variable_depth()
-        hdn     = self.down_element.get_variable_depth()
-        Bup = self.up_element.get_width()
-        Bdn = self.down_element.get_width()
+        cdef double elevup, elevdn, Hup, Hdn, hup, hdn, Bup, Bdn, dx, grad, B, h, n
+        cdef Element up_element, down_element
+        up_element = self.up_element ; down_element = self.down_element
+        elevup = up_element.get_elev()
+        elevdn = down_element.get_elev()
+        Hup     = elevup + up_element.get_variable_depth()
+        Hdn     = elevdn + down_element.get_variable_depth()
+        hup     = up_element.get_variable_depth()
+        hdn     = down_element.get_variable_depth()
+        Bup = up_element.get_width()
+        Bdn = down_element.get_width()
         
         # h = (hup+hdn)/2.0
-        dx    = abs(self.down_element.get_position()-self.up_element.get_position()) 
+        dx    = abs(down_element.get_position()-up_element.get_position()) 
         grad = (Hup-Hdn)/dx
         if grad >= 0:
             h = hup
@@ -61,7 +65,7 @@ cdef class Node:
 
         B = (Bup+Bdn)/2.0
         h = np.max([0.0,h])    # 水位が負値をとったときの処理
-        n = (self.up_element.get_coeff()+self.down_element.get_coeff())/2.0
+        n = (up_element.get_coeff()+down_element.get_coeff())/2.0
         
         self.q = B*(1/n)*h**(5/3)*np.sqrt(grad)*np.sign((Hup-Hdn)/dx)
         

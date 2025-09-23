@@ -2,7 +2,7 @@
 from Element cimport Element
 from Node cimport Node
 
-cpdef void calc_mainloop(list elements_list, list nodes_list,
+cdef void _calc_mainloop(list elements_list, list nodes_list,
                   double dt, list H, list Q, int stages):
     cdef int stage
     cdef Element target_element
@@ -17,13 +17,22 @@ cpdef void calc_mainloop(list elements_list, list nodes_list,
 
     # Iwasaki 修正ルンゲクッタ 各ステージ
     for stage in range(stages):
-        for target_element in flat_elements:
+        for i in range(len(flat_elements)):
+            target_element = flat_elements[i]
             target_element.solve_mass_equation(dt)   # 質量保存側
-        for target_node in flat_nodes:
+        for i in range(len(flat_nodes)):
+            target_node = flat_nodes[i]
             target_node.solve_momentum_equation()
 
-    # 出力用
-    for target_element in flat_elements:
+#    # 出力用
+    for i in range(len(flat_elements)):
+        target_element = flat_elements[i]
         H.append(target_element.get_variable_depth())
-    for target_node in flat_nodes:
+    for i in range(len(flat_nodes)):
+        target_node = flat_nodes[i]
         Q.append(target_node.get_variable_q())
+
+
+cpdef void calc_mainloop(list elements_list, list nodes_list,
+                  double dt, list H, list Q, int stages):
+    _calc_mainloop(elements_list,nodes_list,dt,H,Q,stages)

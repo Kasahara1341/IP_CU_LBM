@@ -26,9 +26,13 @@ cdef class Element: #格子のオブジェクト
 
     # 質量保存則
     cdef void solve_mass_equation(self,double dt):
-        self.time_evo.update_depth(self,dt)   # hの更新
+        cdef Runge_Kutta_4th time_evo
+        time_evo = self.time_evo
+        time_evo.update_depth(self,dt)   # hの更新
     
     cdef double calc_increment(self):
+        cdef double fluxin, fluxout, dh
+        cdef Node upnoad, dnnoad
         fluxin = 0.0
         fluxout = 0.0
 

@@ -70,7 +70,7 @@ width2 = width2[::-1]
 ib = (zb[-1]-zb[0])/(x[-1] - x[0] )
 
 # 流量データの読み込み
-init_dt = 5
+init_dt = 2.5
 dt = init_dt
 df = pd.read_csv("input/Boundary2.csv")
 Qb = list(df[df.keys()[1]])
@@ -232,7 +232,7 @@ while time/3600 < maxt:
     if np.mod(time/3600,1)==0:
         # print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
         # print("numerical error = ",(total_Qout+total_water-total_Qin)/total_Qin)
-        print(Q[int(len(elements)/2)])
+        # print(Q[int(len(elements)/2)])
         Hs.append(H[:len(elements)+1])
         Qs.append(Q[:len(elements)+1])
         # q_plot.append(elements[len(elements)//2].dnnoads[0].get_variable_q())
