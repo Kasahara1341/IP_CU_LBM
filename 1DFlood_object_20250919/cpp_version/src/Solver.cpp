@@ -6,89 +6,97 @@ void Euler::update_depth(Element& element, double dt){
     element.set_depth(new_depth) ;
 }
 
-void Runge_Kutta_4th::update_stage(){
-    if(stage<3){ stage += 1 ;}
-    else{ stage = 0 ;}
-}
-
-void Runge_Kutta_4th::set_depth_old(double value){
-    depth_old = value ;
-}
 //////////////////////////////////////////////////////////////////////////
-// RKについての一般化？検討 with chat GPT
-void Runge_Kutta_4th::update_stage_variables(Element& element, double dt, int order, int stage){
-    double uppdated_depth ;
-    if(order == 4){
-        if(stage==0){
-            double coeff[stage] ;
-        }
-    }
-    increment[0] = element.calc_increment() ;
-    uppdated_depth = element.get_depth() + 0.5*increment[0]*dt ;
-    element.set_depth(uppdated_depth) ;
-    update_stage() ;
-    
-}
-void update_stage(Element& element, int i, double t, double dt) {
-    double tmp_depth = element.get_depth();
-    // y + sum_{j<i} a_ij * k_j * dt を構成
-    for (int j = 0; j < i; j++) {
-        tmp_depth += dt * tbl->a[i][j] * increments[j];
-    }
-    // ステージ i の f(...) を評価
-    Element tmp_elem = element;   // コピーして一時的に状態を作る
-    tmp_elem.set_depth(tmp_depth);
-    increments[i] = tmp_elem.calc_increment();
-}
 namespace RKTables {
-    inline const ButcherTableau& RK2() {
-        static const ButcherTableau tbl = {
+    const ButcherTable& RK2() {
+        static const ButcherTable tbl = {
+            // int                    次数(ステージ数)
             2,
-            {{   0,   0},
-             { 1.0,   0}},
-            {  0.5, 0.5}
+            // vector<vector<double>> ステージごとでknに乗算する係数
+            // k1を計算する際に使う係数はない(k1=dh/dtのため)ので最初は空のvector
+            {{       },
+            // k2 = depth_old + dt * 1.0*k1
+             {1.0    }},
+            // vector<double>         最後の更新でknに乗算する係数
+            { 0.5, 0.5}
         };
         return tbl;
     }
-    inline const ButcherTableau& RK3() {
-        static const ButcherTableau tbl = {
+    const ButcherTable& RK3() {
+        static const ButcherTable tbl = {
             3,
-            {{      0,       0,       0},
-             {    0.5,       0,       0},
-             {   -1.0,     2.0,       0}},
+            {{                },
+             {    0.5         },
+             {   -1.0,     2.0}},
             { 1.0/6.0, 2.0/3.0, 1.0/6.0}
         };
         return tbl;
     }
-    inline const ButcherTableau& RK4() {
-        static const ButcherTableau tbl = {
+    const ButcherTable& RK4() {
+        static const ButcherTable tbl = {
             4,
-            {{   0,   0,  0,0},
-             { 0.5,   0,  0,0},
-             {   0, 0.5,  0,0},
-             {   0,   0,1.0,0}},
+            {{                  },
+             { 0.5              },
+             {   0,   0.5       },
+             {   0,     0,   1.0}},
             {1.0/6, 1.0/3, 1.0/3, 1.0/6}
         };
         return tbl;
     }
-    inline const ButcherTableau& RK6() {
-        static const ButcherTableau tbl = {
+    const ButcherTable& RK6() {
+        static const ButcherTable tbl = {
             6,
-            {
-            {           0.2,           0,             0,                0,            0,             0},
-            {      3.0/40.0,    9.0/40.0,             0,                0,            0,             0},
-            {           0.3,        -0.9,           1.2,                0,            0,             0},
-            {-11.0/54.0,2.5,  -70.0/27.0,     35.0/27.0,                0,            0,             0},
-            {1631.0/55296.0, 175.0/512.0, 575.0/13824.0, 44275.0/110592.0, 253.0/4096.0,             0},
-            },
+            {{                                                                                        },
+            {           0.2                                                                           },
+            {      3.0/40.0,    9.0/40.0,                                                             },
+            {           0.3,        -0.9,           1.2                                               },
+            {-11.0/54.0,2.5,  -70.0/27.0,     35.0/27.0                                               },
+            {1631.0/55296.0, 175.0/512.0, 575.0/13824.0, 44275.0/110592.0,  253.0/4096.0              }},
             {    37.0/378.0,           0,   250.0/621.0,      125.0/594.0,             0, 253.0/4096.0}
         };
         return tbl;
     }
 }
-// */
+void Runge_Kutta::update_stage_variables(Element& element, double dt){
+    double uppdated_depth ;
+    increments[stage] = element.calc_increment() ;
+    uppdated_depth = depth_old ;
+    for(int i=0;i<stage;i++){
+        uppdated_depth += dt * tbl.stage_weights[stage][i] * increments[i] ;
+    }
+    element.set_depth(uppdated_depth) ;
+    // stage発展 or リセット
+    update_stage() ;
+}
+void Runge_Kutta::update_stage(){
+    if(stage<tbl.stages-1){ stage += 1 ;}
+    else{ stage = 0 ;}
+}
+
+void Runge_Kutta::update_depth(Element& element, double dt){
+    if(stage==0){   // set old depth
+        depth_old = element.get_depth() ;
+    }
+    update_stage_variables(element,dt) ;
+    // 係数が揃ったら次の時間ステップの値に更新する
+    if(stage==tbl.stages-1){
+        double uppdated_depth=0 ;
+        for(int i=0;i< tbl.stages ;i++){
+            uppdated_depth += increments[i]*tbl.final_weights[i] ;
+        }
+        element.set_depth(depth_old + uppdated_depth*dt) ;
+    }
+}
 //////////////////////////////////////////////////////////////////////////
 
+// pythonで組んだコードより作成
+void Runge_Kutta_4th::update_stage(){
+    if(stage<3){ stage += 1 ;}
+    else{ stage = 0 ;}
+}
+void Runge_Kutta_4th::set_depth_old(double value){
+    depth_old = value ;
+}
 void Runge_Kutta_4th::update_stage0_variables(Element& element, double dt){
     double uppdated_depth ;
     increment[0] = element.calc_increment() ;

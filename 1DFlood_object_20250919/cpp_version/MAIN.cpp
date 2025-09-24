@@ -12,7 +12,7 @@ int main(){
     readCSV("input/position2.csv",position2,0) ;
     readCSV("input/Boundary2.csv",Qin1,1) ;
     readCSV("input/Boundary2.csv",Qin2,2) ;
-    init_dt = 1 ; 
+    init_dt = 0.5 ; 
     dt      = init_dt ;
     maxt    = Qin1.size() ;
 
@@ -68,15 +68,20 @@ int main(){
     nodes2[nodes2.size()-1] -> set_dn_element(elements[16]) ;
     elements[16]->set_up_node(nodes2[nodes2.size()-1]) ;
 
-    // elementsとnodesをそれぞれ統合
+    // elementsとnodesをそれぞれ統合(solv_mass_equationなどをまとめたいため 好み)
     vector< vector< shared_ptr<Element>>> combined_elem={elements,elements2} ;
     vector< vector< shared_ptr<Node>>>    combined_node={nodes,nodes2} ;
     // 時間解法の選択
     for(const auto& sublist : combined_elem){
         for(const auto& element_ptr : sublist){
+            // Euler
             // element_ptr -> set_time_solver(make_unique<Euler>()) ; number_of_stage=1;
-            element_ptr -> set_time_solver(make_unique<Runge_Kutta_4th>()) ; number_of_stage=4;
-
+            // pythonコードを基に組んだ4次のRunge-Kutta
+            // element_ptr -> set_time_solver(make_unique<Runge_Kutta_4th>()) ; number_of_stage=4;
+            // RKTablesを指定することで用意した次数のRunge-Kuttaをsetする
+            // element_ptr->set_time_solver(std::make_unique<Runge_Kutta>(RKTables::RK6())); number_of_stage=6 ;
+            // 次数を指定することで内部でRKTablesを用意するようにしておく．pythonベースで組んだものと同様の呼び出し方にした
+            element_ptr->set_time_solver(std::make_unique<Runge_Kutta_6th>()); number_of_stage=6 ;
             // 初期条件
             element_ptr -> set_depth(0) ;
         }
@@ -89,18 +94,17 @@ int main(){
     }
 
     double time=0 ;
-    maxt = 400 ;
+    // maxt = 400 ;
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 /////  メイン計算  //////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
-// pythonをUIとして裏でc++で動く仕組みが欲しい．
-    // 出力用変数
+    // 出力用変数 2次元配列のようなもので要素数は[maxt+1][zb1.size()]のようになる
     vector<vector<double>> Q_result(maxt+1,vector<double>(zb1.size())), H_result(maxt+1,vector<double>(zb1.size())), zb_result(maxt+1,vector<double>(zb1.size())) ;
     // 解析時間計測開始
     auto start=chrono::high_resolution_clock::now() ;
-    for(int time_increment=0; time/3600<maxt ; time_increment++){
+    for(int time_increment=1; time/3600<maxt ; time_increment++){
         // 上流端境界条件処理
         bc_upnode[0]    -> set_flow_q(Qin1[(int)(time/3600)]) ;
         bc_upnode2[0]   -> set_flow_q(Qin2[(int)(time/3600)]) ;
@@ -108,8 +112,9 @@ int main(){
         bc_dnelement[0] -> set_depth(elements[elements.size()-1]->get_depth()) ;
         
         // 水深・流量の計算
-        for(int Rkstage=0; Rkstage<number_of_stage ; Rkstage++){
+        for(int Rkstage=0; Rkstage < number_of_stage ; Rkstage++){
             // #pragma omp parallel for
+            // 今回は本川と支川をそれぞれ作ってまとめたので combined_elem.size()=2
             for(int i=0; i < combined_elem.size(); i++) {
                 for(int j = 0; j < combined_elem[i].size(); j++) {
                     combined_elem[i][j]->solve_mass_equation(dt);
@@ -131,6 +136,7 @@ int main(){
             dt = init_dt ;
         }
         
+        // 出力時間を切りよくするための調整
         if(3600*output_count < time+dt){
             dt = 3600*output_count - time ;
             if(dt==0){dt=1;}
@@ -151,8 +157,10 @@ int main(){
     }
     auto end=chrono::high_resolution_clock::now() ;
     chrono::duration<double> duration=end-start ;
+    // \nは改行を意味する
     cout<<"\ncompute time = " << duration.count() << " 秒\n" <<endl;
 
+    // 結果をcsvファイルに出力
     writeCSV("out/Qs.csv",Q_result) ;
     writeCSV("out/Hs.csv",H_result) ;
     writeCSV("out/zb.csv",zb_result) ;

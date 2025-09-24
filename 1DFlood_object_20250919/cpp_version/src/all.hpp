@@ -69,7 +69,7 @@ class Euler : public Time_solver{
     public:
         void update_depth(Element& element, double dt) override ;
 } ;
-
+// pythonで組んだコードより作成
 class Runge_Kutta_4th : public Time_solver{
     private:
         int stage = 0 ;
@@ -84,18 +84,53 @@ class Runge_Kutta_4th : public Time_solver{
         void update_stage3_variables(Element&, double) ;
 } ;
 
-class Runge_Kutta_6th : public Time_solver{
+//////////////////////////////////////////////////////////////////////////
+// 以下 
+struct ButcherTable {
+    int stages;
+    vector<vector<double>> stage_weights ;  // stage coefficients
+    vector<double> final_weights;                   // output weights
+};
+namespace RKTables {
+    const ButcherTable& RK2();
+    const ButcherTable& RK3();
+    const ButcherTable& RK4();
+    const ButcherTable& RK6();
+}
+class Runge_Kutta : public Time_solver{
     private:
-        int stage = 0 ;
-        double depth_old, increment[6] ;
+        ButcherTable tbl ;
+        int stage = 0;
+        vector<double> increments ;
+        double depth_old ;
     public:
-        void update_depth(Element& element, double dt) override ;
+        Runge_Kutta(const ButcherTable& Table)
+        : tbl(Table), increments(Table.stages, 0.0) {}    
+        void update_depth(Element& element, double) override ;
         void update_stage() ;
-        void set_depth_old(double) ;
-        void update_stage0_variables(Element&, double) ;
-        void update_stage1_variables(Element&, double) ;
-        void update_stage2_variables(Element&, double) ;
-        void update_stage3_variables(Element&, double) ;
-        void update_stage4_variables(Element&, double) ;
-        void update_stage5_variables(Element&, double) ;
+        void update_stage_variables(Element&, double) ;
 } ;
+
+// 上記のみでも解法をsetできるが，以下を追加すると引数なしで呼び出せる
+class Runge_Kutta_2nd : public Runge_Kutta {
+public:
+    Runge_Kutta_2nd() : Runge_Kutta(RKTables::RK2()) {}
+};
+
+class Runge_Kutta_3rd : public Runge_Kutta {
+public:
+    Runge_Kutta_3rd() : Runge_Kutta(RKTables::RK3()) {}
+};
+/*  pythonを参考に組んだものと名前がかぶるため一時的にコメントアウト
+class Runge_Kutta_4th : public Runge_Kutta {
+public:
+    Runge_Kutta_4th() : Runge_Kutta(RKTables::RK4()) {}
+};  */
+
+class Runge_Kutta_6th : public Runge_Kutta {
+public:
+    Runge_Kutta_6th() : Runge_Kutta(RKTables::RK6()) {}
+};
+//////////////////////////////////////////////////////////////////////////
+
+
