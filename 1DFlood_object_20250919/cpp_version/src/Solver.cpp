@@ -6,7 +6,6 @@ void Euler::update_depth(Element& element, double dt){
     element.set_depth(new_depth) ;
 }
 
-//////////////////////////////////////////////////////////////////////////
 namespace RKTables {
     const ButcherTable& RK2() {
         static const ButcherTable tbl = {
@@ -86,60 +85,4 @@ void Runge_Kutta::update_depth(Element& element, double dt){
         }
         element.set_depth(depth_old + uppdated_depth*dt) ;
     }
-}
-//////////////////////////////////////////////////////////////////////////
-
-// pythonで組んだコードより作成
-void Runge_Kutta_4th::update_stage(){
-    if(stage<3){ stage += 1 ;}
-    else{ stage = 0 ;}
-}
-void Runge_Kutta_4th::set_depth_old(double value){
-    depth_old = value ;
-}
-void Runge_Kutta_4th::update_stage0_variables(Element& element, double dt){
-    double uppdated_depth ;
-    increment[0] = element.calc_increment() ;
-    uppdated_depth = element.get_depth() + 0.5*increment[0]*dt ;
-    element.set_depth(uppdated_depth) ;
-    update_stage() ;
-    
-}
-void Runge_Kutta_4th::update_stage1_variables(Element& element, double dt){
-    double uppdated_depth ;
-    increment[1] = element.calc_increment() ;
-    uppdated_depth = element.get_depth() + 0.5*increment[1]*dt ;
-    element.set_depth(uppdated_depth) ;
-    update_stage() ;
-    
-}
-void Runge_Kutta_4th::update_stage2_variables(Element& element, double dt){
-    double uppdated_depth ;
-    increment[2] = element.calc_increment() ;
-    uppdated_depth = element.get_depth() + increment[2]*dt ;
-    element.set_depth(uppdated_depth) ;
-    update_stage() ;
-    
-}
-void Runge_Kutta_4th::update_stage3_variables(Element& element, double dt){
-    increment[3] = element.calc_increment() ;
-    update_stage() ;
-}
-
-void Runge_Kutta_4th::update_depth(Element& element, double dt){
-    if(stage==0){
-        depth_old = element.get_depth() ;
-        update_stage0_variables(element,dt) ;
-    }
-    else if(stage==1){ update_stage1_variables(element,dt); }
-    else if(stage==2){ update_stage2_variables(element,dt); }
-    else if(stage==3){ 
-        update_stage3_variables(element,dt) ;
-        double uppdated_depth=0, coeff[4]={1,2,2,1} ;
-        for(int i=0;i<4;i++){
-            uppdated_depth += increment[i]*coeff[i] / 6.0 ;
-        }
-        element.set_depth(depth_old + uppdated_depth*dt) ;
-    }
-    else{cout<<"Runge Kutta error stage access!!!\n";}
 }

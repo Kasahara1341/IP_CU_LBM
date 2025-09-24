@@ -76,12 +76,8 @@ int main(){
         for(const auto& element_ptr : sublist){
             // Euler
             // element_ptr -> set_time_solver(make_unique<Euler>()) ; number_of_stage=1;
-            // pythonコードを基に組んだ4次のRunge-Kutta
-            // element_ptr -> set_time_solver(make_unique<Runge_Kutta_4th>()) ; number_of_stage=4;
             // RKTablesを指定することで用意した次数のRunge-Kuttaをsetする
-            // element_ptr->set_time_solver(std::make_unique<Runge_Kutta>(RKTables::RK6())); number_of_stage=6 ;
-            // 次数を指定することで内部でRKTablesを用意するようにしておく．pythonベースで組んだものと同様の呼び出し方にした
-            element_ptr->set_time_solver(std::make_unique<Runge_Kutta_6th>()); number_of_stage=6 ;
+            element_ptr->set_time_solver(std::make_unique<Runge_Kutta>(RKTables::RK6())); number_of_stage=6 ;
             // 初期条件
             element_ptr -> set_depth(0) ;
         }
@@ -94,7 +90,7 @@ int main(){
     }
 
     double time=0 ;
-    // maxt = 400 ;
+    maxt = 40 ;
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +144,7 @@ int main(){
             cout<<" Q[50]= "<<elements[50]->get_depth()<<endl;
             cout<<" Qin1 = "<<bc_upnode[0] -> get_flux()<<endl;
             for(i=0;i<zb1.size();i++){
-                Q_result [(int)time/3600][i] = nodes[i] -> get_flux() ;
+                Q_result [(int)time/3600][i] = nodes[i]   ->get_flux() ;
                 H_result [(int)time/3600][i] = elements[i]->get_depth() + elements[i]->get_elevation() ;
                 zb_result[(int)time/3600][i] = zb1[i] ;
             }
