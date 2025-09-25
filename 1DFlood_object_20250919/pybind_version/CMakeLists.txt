@@ -1,17 +1,27 @@
 cmake_minimum_required(VERSION 3.14)
-project(mylib)
+project(my_module)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(pybind11_DIR "/home/tsuyoshi/my_env/lib/python3.12/site-packages/pybind11")
+# option
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
-find_package(pybind11 REQUIRED)
+# pybind11 を FetchContent で取得
+include(FetchContent)
 
-pybind11_add_module(mylib
-    src/ElemNod.cpp
-    src/ReadWrite.cpp
-    src/Solver.cpp
-    python_bindings/bindings.cpp
+FetchContent_Declare(
+  pybind11
+  GIT_REPOSITORY https://github.com/pybind/pybind11.git
+  GIT_TAG        v2.13.1  # 適宜最新版に変更
 )
 
-pybind11_add_module(my_module ${SOURCES})
+FetchContent_MakeAvailable(pybind11)
+
+# Python モジュールとしてビルド
+pybind11_add_module(my_module 
+    python_bindings/bindings.cpp
+    python_bindings/Element_bindings.cpp
+    src/ElemNod.cpp
+    src/Solver.cpp
+)

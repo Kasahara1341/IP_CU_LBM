@@ -25,12 +25,12 @@ class Element{
     private:
         double position, length, elevation, n_manning, width, depth ;
         vector<shared_ptr<Node>> up_nodes, dn_nodes ;
-        unique_ptr<Time_solver> time_evo ;
+        shared_ptr<Time_solver> time_evo ;
 
     public:
     Element(double position_, double length_, double elevation_, double n_manning_, double width_)
         :   position(position_), length(length_), elevation(elevation_), n_manning(n_manning_), width(width_) {}
-    void set_time_solver(unique_ptr<Time_solver> solver) ;
+    void set_time_solver(shared_ptr<Time_solver> solver) ;
     void solve_mass_equation(double) ;
     double calc_increment() ;
     void set_up_node(shared_ptr<Node>) ;

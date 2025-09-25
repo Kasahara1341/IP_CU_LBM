@@ -1,15 +1,16 @@
 #include <pybind11/pybind11.h>
-#include "../src/all.hpp"  // まとめヘッダを読み込む
+#include "../src/all.hpp"
 
 namespace py = pybind11;
 
+// ""内のものはpythonファイルで呼ぶときの名前でここで決められる
+void bind_Element(py::module_ &m) ;
+void bind_Node(py::module_ &m) ;
+void bind_Time_solver(py::module_ &m) ;
+
+//  (pythonでのmodule名  ここでの呼び名)
 PYBIND11_MODULE(my_module, m) {
-    m.doc() = "C++ functions exposed to Python via pybind11";
-
-    // 例：a.cpp に int add(int, int) がある場合
-    m.def("add", &add, "A function that adds two numbers");
-
-    // 他の関数も同様に登録
-    m.def("foo", &foo, "Description of foo");
-    m.def("bar", &bar, "Description of bar");
+    bind_Element(m);
+    bind_Node(m);
+    bind_Time_solver(m);
 }

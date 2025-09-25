@@ -1,7 +1,7 @@
 #include "all.hpp" 
 
-void Element::set_time_solver(unique_ptr<Time_solver> solver){
-    time_evo = std::move(solver) ;
+void Element::set_time_solver(shared_ptr<Time_solver> solver){
+    time_evo = solver ;
 }
 
 void Element::solve_mass_equation(double dt){
@@ -31,11 +31,11 @@ void Element::set_dn_node(shared_ptr<Node> dn_node){
     depth = setDepth ;
 }
 
-double Element::get_depth()      { return depth ;}
-double Element::get_position()   { return position ;}
-double Element::get_length()     { return length ;}
+double Element::get_depth()      { return depth     ;}
+double Element::get_position()   { return position  ;}
+double Element::get_length()     { return length    ;}
 double Element::get_elevation()  { return elevation ;}
-double Element::get_width()      { return width ;}
+double Element::get_width()      { return width     ;}
 double Element::get_n_manning()  { return n_manning ;}
 
 
