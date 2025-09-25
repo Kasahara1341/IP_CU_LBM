@@ -95,3 +95,6 @@ class Runge_Kutta : public Time_solver{
         void update_stage_variables(Element&, double) ;
 } ;
 
+void compute_all(vector<shared_ptr<Element>>& ,vector<shared_ptr<Node>>& ,  
+    vector<shared_ptr<Element>>& ,vector<shared_ptr<Node>>& ,double , int, int ) ;
+void test_elements(std::vector<std::shared_ptr<Element>>& elements) ;

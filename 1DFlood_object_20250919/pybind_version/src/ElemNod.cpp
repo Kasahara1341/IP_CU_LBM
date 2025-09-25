@@ -9,7 +9,6 @@ void Element::solve_mass_equation(double dt){
 }
 
 double Element::calc_increment(){
-    int i ;
     double fluxin = 0, fluxout = 0, dh ;
     for(auto& node_ptr : up_nodes){
         fluxin  += node_ptr->get_flux()/length ;

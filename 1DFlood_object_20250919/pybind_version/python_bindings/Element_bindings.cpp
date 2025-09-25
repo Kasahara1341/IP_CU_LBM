@@ -1,4 +1,8 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
+#include <pybind11/chrono.h>
 #include "../src/all.hpp"
 namespace py = pybind11;
 
@@ -17,6 +21,7 @@ void bind_Element(py::module_ &m) {
         .def("get_length",          &Element::get_length)
         .def("get_width",           &Element::get_width)
         .def("get_position",        &Element::get_position) ;
+        
 }
 
 void bind_Node(py::module_ &m) {
@@ -42,10 +47,13 @@ void bind_Time_solver(py::module_ &m) {
         .def_readonly("stages", &ButcherTable::stages)
         .def_readonly("stage_weights", &ButcherTable::stage_weights)
         .def_readonly("final_weights", &ButcherTable::final_weights) ;
+    py::class_<Runge_Kutta, Time_solver, std::shared_ptr<Runge_Kutta>>(m,"Runge_Kutta")
+        .def(py::init<const ButcherTable&>()) ;
         m.def("RK2", &RKTables::RK2, py::return_value_policy::reference);
         m.def("RK3", &RKTables::RK3, py::return_value_policy::reference);
         m.def("RK4", &RKTables::RK4, py::return_value_policy::reference);
         m.def("RK6", &RKTables::RK6, py::return_value_policy::reference);        
-    py::class_<Runge_Kutta, Time_solver, std::shared_ptr<Runge_Kutta>>(m,"Runge_Kutta")
-        .def(py::init<const ButcherTable&>()) ;
+    m.def("compute_all", &compute_all) ;
+    m.def("test_elements", &test_elements) ;
+
 }

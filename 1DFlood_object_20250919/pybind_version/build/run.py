@@ -48,7 +48,6 @@ dt = init_dt
 df = pd.read_csv("../input/Boundary2.csv")
 Qb = list(df[df.keys()[1]])
 Qb2 = list(df[df.keys()[2]])
-print(Qb)
 Qb = np.array(Qb)
 Qb2 = np.array(Qb2)
 maxt = Qb.shape[0]
@@ -112,7 +111,7 @@ for i in range(n_riv2):
     nodes[i].set_flux(0)
 
 time=0
-maxt = 10
+maxt = 100
 
 # 計算開始時刻を記録
 start_time = timers.time()
@@ -137,21 +136,25 @@ while time/3600 < maxt :
         for target_node in nodes2:
             target_node.solve_momentum_equation()  
             tmp+=1
-    for target_element in elements:
-        H.append(target_element.get_elevation()+target_element.get_depth())
-    for target_node in nodes:
-        Q.append(target_node.get_flux)
+    # """
+    # my_module.compute_all(elements,nodes,elements2,nodes2,dt,num_stage,1)
+    # my_module.test_elements(elements)
+    if np.mod(time/3600,1)==0:
+        for target_element in elements:
+            H.append(target_element.get_elevation()+target_element.get_depth())
+        for target_node in nodes:
+            Q.append(target_node.get_flux)
     
     time += dt
 
     if np.mod(time/3600,1)==0:
         print("time:",time/3600,"  [h]",r"Q(m^3/s):","dt:",dt,"Qup:",Qb[int(time // 3600)],"Q[50]:",nodes[50].get_flux())
-        fig = plt.figure(figsize=(11,4))
+        """fig = plt.figure(figsize=(11,4))
         plt.plot(x,H,label="water level")
         plt.plot(x,zb,label="elevatino")
         plt.legend() ; plt.grid()
         plt.savefig("figure/fig%04d.png"%(time/3600))
-        plt.close()
+        plt.close()"""
 
 # 計算終了時刻を記録
 end_time = timers.time()
