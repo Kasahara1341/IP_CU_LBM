@@ -135,7 +135,7 @@ while time/3600 < maxt :
 
     # solv_mass_equationなどはc++だがforで回す分多少遅くなる
     # ここではpythonコードで簡単に質量保存を確認するために使用する
-    qout_stage = []
+    """qout_stage = []
     for stage in range(num_stage):
         qout_stage.append(nodes[-1].get_flux())
         for target_element in domein_elements:
@@ -154,7 +154,7 @@ while time/3600 < maxt :
         total_water += tmp_depth*tmp_length*tmp_width
     # """
     # c++に渡して計算する．
-    # my_module.compute_all(domein_elements,domein_nodes,dt,num_stage)
+    my_module.compute_all(domein_elements,domein_nodes,dt,num_stage)
 
     if Qb[int(time//3600)]>200:
         dt = 1
