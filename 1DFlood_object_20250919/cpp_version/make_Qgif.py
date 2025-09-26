@@ -18,7 +18,8 @@ fig, ax = plt.subplots(figsize=(11, 4))
 line, = ax.plot([], [], marker="o", color="red", linewidth=2, label="Q")
 
 ax.set_xlim(x.min(), x.max())
-ax.set_ylim(0, data.max() * 1.1)  # 固定にすると速い
+# ax.set_ylim(0, data.max() * 1.1)  # 固定にすると速い
+ax.set_ylim(0, 3000)
 ax.set_xlabel("L [m]")
 ax.set_ylabel(r"Q [m$^3$/s]")
 ax.legend(loc="best")

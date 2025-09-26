@@ -62,7 +62,7 @@ void Node::solve_momentum_equation(){
     depth = fmax(0,depth) ;
     grad  = (up_H - dn_H)/length ;
     double sign = (grad>0) - (grad<0) ;
-    flow_q = width/n_manning * pow(depth,5.0/3.0) * sqrt(fabs(grad))*sign ;
+    flux = width/n_manning * pow(depth,5.0/3.0) * sqrt(fabs(grad))*sign ;
 
     
 }
@@ -73,9 +73,9 @@ void Node::set_up_element(shared_ptr<Element> element){
 void Node::set_dn_element(shared_ptr<Element> element){
     dn_element = element ;
 }
-void Node::set_flow_q(double value){
-    flow_q = value ;
+void Node::set_flux(double value){
+    flux = value ;
 }
 shared_ptr<Element> Node::get_up_element(){ return up_element ;}
 shared_ptr<Element> Node::get_dn_element(){ return dn_element ;}
-double  Node::get_flux(){ return flow_q ;}
+double  Node::get_flux(){ return flux ;}

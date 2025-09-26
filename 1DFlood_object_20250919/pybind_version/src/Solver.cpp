@@ -88,28 +88,13 @@ void Runge_Kutta::update_depth(Element& element, double dt){
 }
 
 void compute_all(vector<shared_ptr<Element>>& elements ,vector<shared_ptr<Node>>& nodes, 
-                 vector<shared_ptr<Element>>& elements2,vector<shared_ptr<Node>>& nodes2,
-    double dt, int num_stages, int loop) {
-    for (int i=0;i<loop;i++) {
-        for(int stages=0; stages < num_stages ; stages++){
-            for(int j=0; j< elements.size() ; j++){
-                elements[j] -> solve_mass_equation(dt) ;
-            }
-            for(int j=0; j< elements2.size() ; j++){
-                elements2[j] -> solve_mass_equation(dt) ;
-            }
-            for(int j=0; j<nodes.size() ; j++){
-                nodes[j] -> solve_momentum_equation() ;
-            }
-            for(int j=0; j<nodes2.size() ; j++){
-                nodes2[j] -> solve_momentum_equation() ;
-            }
+    double dt, int num_stages) {
+    for(int stages=0; stages < num_stages ; stages++){
+        for(int j=0; j< elements.size() ; j++){
+            elements[j] -> solve_mass_equation(dt) ;
         }
-    }
-}
-
-void test_elements(std::vector<std::shared_ptr<Element>>& elements) {
-    for (auto& e : elements) {
-        e->set_depth(1.23);  // 適当にメンバを呼ぶ
+        for(int j=0; j<nodes.size() ; j++){
+            nodes[j] -> solve_momentum_equation() ;
+        }
     }
 }

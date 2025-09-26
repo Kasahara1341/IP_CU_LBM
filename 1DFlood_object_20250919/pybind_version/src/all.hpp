@@ -46,13 +46,13 @@ class Element{
 
 class Node{
     private:
-        double flow_q ;
+        double flux ;
         shared_ptr<Element> up_element, dn_element ;
     public:
     void solve_momentum_equation() ;
     void set_up_element(shared_ptr<Element>) ;
     void set_dn_element(shared_ptr<Element>) ;
-    void set_flow_q(double) ;
+    void set_flux(double) ;
     shared_ptr<Element> get_up_element() ;
     shared_ptr<Element> get_dn_element() ;
     double get_flux() ;
@@ -95,6 +95,4 @@ class Runge_Kutta : public Time_solver{
         void update_stage_variables(Element&, double) ;
 } ;
 
-void compute_all(vector<shared_ptr<Element>>& ,vector<shared_ptr<Node>>& ,  
-    vector<shared_ptr<Element>>& ,vector<shared_ptr<Node>>& ,double , int, int ) ;
-void test_elements(std::vector<std::shared_ptr<Element>>& elements) ;
+void compute_all(vector<shared_ptr<Element>>& ,vector<shared_ptr<Node>>& ,double , int) ;

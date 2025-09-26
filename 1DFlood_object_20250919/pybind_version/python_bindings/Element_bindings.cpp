@@ -29,7 +29,7 @@ void bind_Node(py::module_ &m) {
         .def(py::init<>())
         // .def_readwrite("position", &Element::position)
         .def("solve_momentum_equation", &Node::solve_momentum_equation)
-        .def("set_flux", &Node::set_flow_q)
+        .def("set_flux", &Node::set_flux)
         .def("set_up_element", &Node::set_up_element)
         .def("set_dn_element", &Node::set_dn_element)
 
@@ -43,7 +43,7 @@ void bind_Time_solver(py::module_ &m) {
         .def("update_depth", &Time_solver::update_depth) ;
     py::class_<Euler, Time_solver, std::shared_ptr<Euler>>(m,"Euler")
         .def(py::init<>()) ;
-    py::class_<ButcherTable>(m, "ButcherTable")
+    py::class_<ButcherTable>(m, "ButcherTable") 
         .def_readonly("stages", &ButcherTable::stages)
         .def_readonly("stage_weights", &ButcherTable::stage_weights)
         .def_readonly("final_weights", &ButcherTable::final_weights) ;
@@ -54,6 +54,5 @@ void bind_Time_solver(py::module_ &m) {
         m.def("RK4", &RKTables::RK4, py::return_value_policy::reference);
         m.def("RK6", &RKTables::RK6, py::return_value_policy::reference);        
     m.def("compute_all", &compute_all) ;
-    m.def("test_elements", &test_elements) ;
 
 }
