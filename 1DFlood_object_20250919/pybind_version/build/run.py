@@ -16,9 +16,9 @@ mask = (sec >= 1) & (sec < 114)
 n_points = np.count_nonzero(mask)
 # x座標 (合流点からの距離)
 x = np.arange(n_points) * 150
-# zb2
+# 条件に合うマスクの座標
 zb = z[mask]
-# width2 (今は固定値100)
+# 条件に合うマスクの川幅
 width = w[mask]
 
 # 支川の地形配列の作成
@@ -38,7 +38,7 @@ zb2 = zb2[::-1] ; x2 = x2[::-1] ; width2 = width2[::-1]
 ib = (zb[-1]-zb[0])/(x[-1] - x[0] )
 
 # 流量データの読み込み
-init_dt = 1
+init_dt = 2.5
 dt = init_dt
 df = pd.read_csv("../input/Boundary2.csv")
 Qb = list(df[df.keys()[1]])
@@ -91,13 +91,17 @@ elements2[0].set_up_node(bc_upnode2)
 nodes2[-1].set_dn_element(elements[16])   
 elements[16].set_up_node(nodes2[-1])
 
-for elements_list in [elements,elements2]:
-    for target_element in elements_list:
-        # solver = my_module.Euler() ; num_stage=1
-        solver = my_module.Runge_Kutta(my_module.RK4()) ; num_stage=4
-        # solver = my_module.Runge_Kutta(my_module.RK6()) ; num_stage=6
+# 水系内で配列結合
+# domein_hogeの変更は元のhogesやhoges2にも反映される
+domein_elements = elements + elements2
+domein_nodes    = nodes    + nodes2
 
-        target_element.set_time_solver(solver)
+# 時間積分方法の設定
+for target_element in domein_elements:
+    # solver = my_module.Euler() ; num_stage=1
+    solver = my_module.Runge_Kutta(my_module.RK4()) ; num_stage=4
+    # solver = my_module.Runge_Kutta(my_module.RK6()) ; num_stage=6
+    target_element.set_time_solver(solver)
 
 # 初期化
 for i in range(n_riv):
@@ -106,13 +110,10 @@ for i in range(n_riv):
 for i in range(n_riv2):
     elements2[i].set_depth(0)
     nodes[i].set_flux(0)
-# 水系内で配列結合
-# domein_hogeの変更は元のhogesやhoges2にも反映される
-domein_elements = elements + elements2
-domein_nodes    = nodes    + nodes2
+
 
 time=0.0
-# maxt = 100
+maxt = 100
 
 # 計算開始時刻を記録
 start_time = timers.time()
@@ -169,6 +170,7 @@ while time/3600 < maxt :
             H.append(target_element.get_elevation()+target_element.get_depth())
         for target_node in nodes:
             Q.append(target_node.get_flux())
+        print("element[50]",elements[50].get_depth(),"domein_element[50]",domein_elements[50].get_depth())
         print("time:",time/3600,"  [h]",r"Q(m^3/s):","dt:",dt,"Qup:",Qb[int((time-dt) // 3600)],"Q[50]:",nodes[50].get_flux())
         print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
         print("numerical error = ",(total_Qout+total_water-total_Qin)/total_Qin)        
