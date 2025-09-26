@@ -1,4 +1,6 @@
-import my_module
+import sys
+sys.path.append("build")
+import my_module 
 import numpy as np
 import pandas as pd
 import time as timers
@@ -38,7 +40,7 @@ zb2 = zb2[::-1] ; x2 = x2[::-1] ; width2 = width2[::-1]
 ib = (zb[-1]-zb[0])/(x[-1] - x[0] )
 
 # 流量データの読み込み
-init_dt = 2.5
+init_dt = 1
 dt = init_dt
 df = pd.read_csv("../input/Boundary2.csv")
 Qb = list(df[df.keys()[1]])
@@ -101,6 +103,7 @@ for target_element in domein_elements:
     # solver = my_module.Euler() ; num_stage=1
     solver = my_module.Runge_Kutta(my_module.RK4()) ; num_stage=4
     # solver = my_module.Runge_Kutta(my_module.RK6()) ; num_stage=6
+
     target_element.set_time_solver(solver)
 
 # 初期化
@@ -113,7 +116,7 @@ for i in range(n_riv2):
 
 
 time=0.0
-maxt = 100
+# maxt = 20
 
 # 計算開始時刻を記録
 start_time = timers.time()
@@ -135,7 +138,7 @@ while time/3600 < maxt :
 
     # solv_mass_equationなどはc++だがforで回す分多少遅くなる
     # ここではpythonコードで簡単に質量保存を確認するために使用する
-    qout_stage = []
+    """qout_stage = []
     for stage in range(num_stage):
         qout_stage.append(nodes[-1].get_flux())
         for target_element in domein_elements:
@@ -143,7 +146,8 @@ while time/3600 < maxt :
         for target_node in domein_nodes:
             target_node.solve_momentum_equation()
     # 4次Runge Kutta用の係数
-    total_Qout+= (qout_stage[0]+2.0*qout_stage[1]+2.0*qout_stage[2]+qout_stage[3])*dt/6.0
+    total_Qout+= (qout_stage[0] + 2.0*qout_stage[1] + 2.0*qout_stage[2] + qout_stage[3])*dt/6.0
+    # total_Qout+= qout_stage[0]*dt
     total_Qin += Qb[int(time // 3600)]  * dt
     total_Qin += Qb2[int(time // 3600)] * dt
     total_water=0 
@@ -154,7 +158,7 @@ while time/3600 < maxt :
         total_water += tmp_depth*tmp_length*tmp_width
     # """
     # c++に渡して計算する．
-    # my_module.compute_all(domein_elements,domein_nodes,dt,num_stage)
+    my_module.compute_all(domein_elements,domein_nodes,dt,num_stage)
 
     if Qb[int(time//3600)]>200:
         dt = 1
@@ -171,25 +175,20 @@ while time/3600 < maxt :
         for target_node in nodes:
             Q.append(target_node.get_flux())
         print("element[50]",elements[50].get_depth(),"domein_element[50]",domein_elements[50].get_depth())
-        print("time:",time/3600,"  [h]",r"Q(m^3/s):","dt:",dt,"Qup:",Qb[int((time-dt) // 3600)],"Q[50]:",nodes[50].get_flux())
-        print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
-        print("numerical error = ",(total_Qout+total_water-total_Qin)/total_Qin)        
+        # print("Qout=",qout_stage)
+        print("time:",time/3600,"  [h]",r"Q(m^3/s):","dt:",dt,"Qup:",Qb[int((time-dt) // 3600)],"Qup2",Qb2[int((time-dt)//3600)],"Q[50]:",nodes[50].get_flux())
+        # print("total_Qin:",total_Qin," total_water:",total_water," total_Qout:",total_Qout,"sum:",total_Qout+total_water-total_Qin)
+        # print("numerical error = ",(total_Qout+total_water-total_Qin)/total_Qin)        
         count += 1
         Hall.append(H) 
         Qall.append(Q)
         dt = init_dt
-        """fig = plt.figure(figsize=(11,4))
-        plt.plot(x,H,label="water level")
-        plt.plot(x,zb,label="elevatino")
-        plt.legend() ; plt.grid()
-        plt.savefig("figure/fig%04d.png"%(time/3600))
-        plt.close()"""
-
 
 # 計算終了時刻を記録
 end_time = timers.time()
 # 経過時間を表示
 print(f"計算時間: {end_time - start_time:.3f} 秒")        
 
+# 結果を出力
 np.savetxt("../out/Hs.csv",Hall, fmt="%.6f", delimiter=",")
 np.savetxt("../out/Qs.csv",Qall, fmt="%.6f", delimiter=",")

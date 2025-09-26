@@ -22,6 +22,9 @@ FetchContent_MakeAvailable(pybind11)
 pybind11_add_module(my_module 
     python_bindings/bindings.cpp
     python_bindings/Element_bindings.cpp
-    src/ElemNod.cpp
+    python_bindings/Node_bindings.cpp
+    python_bindings/Solver_bindings.cpp
+    src/Element.cpp
+    src/Node.cpp
     src/Solver.cpp
 )

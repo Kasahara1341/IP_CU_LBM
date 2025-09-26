@@ -58,14 +58,13 @@ namespace RKTables {
 }
 void Runge_Kutta::update_stage_variables(Element& element, double dt){
     double uppdated_depth ;
-    increments[stage] = element.calc_increment() ;
     uppdated_depth = depth_old ;
     for(int i=0;i<stage;i++){
         uppdated_depth += dt * tbl.stage_weights[stage][i] * increments[i] ;
     }
     element.set_depth(uppdated_depth) ;
-    // stage発展 or リセット
-    update_stage() ;
+    increments[stage] = element.calc_increment() ;
+
 }
 void Runge_Kutta::update_stage(){
     if(stage<tbl.stages-1){ stage += 1 ;}
@@ -85,11 +84,13 @@ void Runge_Kutta::update_depth(Element& element, double dt){
         }
         element.set_depth(depth_old + uppdated_depth*dt) ;
     }
+    // stage発展 or リセット
+    update_stage() ;
 }
 
 void compute_all(vector<shared_ptr<Element>>& elements ,vector<shared_ptr<Node>>& nodes, 
     double dt, int num_stages) {
-    for(int stages=0; stages < num_stages ; stages++){
+    for(int i=0; i < num_stages ; i++){
         for(int j=0; j< elements.size() ; j++){
             elements[j] -> solve_mass_equation(dt) ;
         }

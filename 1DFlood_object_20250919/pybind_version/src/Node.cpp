@@ -1,42 +1,4 @@
-#include "all.hpp" 
-
-void Element::set_time_solver(shared_ptr<Time_solver> solver){
-    time_evo = solver ;
-}
-
-void Element::solve_mass_equation(double dt){
-    time_evo->update_depth(*this, dt) ;
-}
-
-double Element::calc_increment(){
-    double fluxin = 0, fluxout = 0, dh ;
-    for(auto& node_ptr : up_nodes){
-        fluxin  += node_ptr->get_flux()/length ;
-    }
-    for(auto& node_ptr : dn_nodes){
-        fluxout += node_ptr->get_flux()/length ;
-    }
-
-    dh = (fluxin - fluxout) / width ;
-    return dh ;
-}
-
-void Element::set_up_node(shared_ptr<Node> up_node){
-    up_nodes.push_back(up_node) ;
-}
-void Element::set_dn_node(shared_ptr<Node> dn_node){
-    dn_nodes.push_back(dn_node) ;
-}void Element::set_depth(double setDepth){
-    depth = setDepth ;
-}
-
-double Element::get_depth()      { return depth     ;}
-double Element::get_position()   { return position  ;}
-double Element::get_length()     { return length    ;}
-double Element::get_elevation()  { return elevation ;}
-double Element::get_width()      { return width     ;}
-double Element::get_n_manning()  { return n_manning ;}
-
+#include "all.hpp"
 
 void Node::solve_momentum_equation(){
     double up_H, dn_H, up_depth, dn_depth, up_elev, dn_elev ;
@@ -63,8 +25,6 @@ void Node::solve_momentum_equation(){
     grad  = (up_H - dn_H)/length ;
     double sign = (grad>0) - (grad<0) ;
     flux = width/n_manning * pow(depth,5.0/3.0) * sqrt(fabs(grad))*sign ;
-
-    
 }
 
 void Node::set_up_element(shared_ptr<Element> element){

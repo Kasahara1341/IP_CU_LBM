@@ -153,6 +153,54 @@ python_bindings/Element_bindings.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/Element_bindings.cpp.s
 .PHONY : python_bindings/Element_bindings.cpp.s
 
+python_bindings/Node_bindings.o: python_bindings/Node_bindings.cpp.o
+.PHONY : python_bindings/Node_bindings.o
+
+# target to build an object file
+python_bindings/Node_bindings.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/Node_bindings.cpp.o
+.PHONY : python_bindings/Node_bindings.cpp.o
+
+python_bindings/Node_bindings.i: python_bindings/Node_bindings.cpp.i
+.PHONY : python_bindings/Node_bindings.i
+
+# target to preprocess a source file
+python_bindings/Node_bindings.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/Node_bindings.cpp.i
+.PHONY : python_bindings/Node_bindings.cpp.i
+
+python_bindings/Node_bindings.s: python_bindings/Node_bindings.cpp.s
+.PHONY : python_bindings/Node_bindings.s
+
+# target to generate assembly for a file
+python_bindings/Node_bindings.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/Node_bindings.cpp.s
+.PHONY : python_bindings/Node_bindings.cpp.s
+
+python_bindings/Solver_bindings.o: python_bindings/Solver_bindings.cpp.o
+.PHONY : python_bindings/Solver_bindings.o
+
+# target to build an object file
+python_bindings/Solver_bindings.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/Solver_bindings.cpp.o
+.PHONY : python_bindings/Solver_bindings.cpp.o
+
+python_bindings/Solver_bindings.i: python_bindings/Solver_bindings.cpp.i
+.PHONY : python_bindings/Solver_bindings.i
+
+# target to preprocess a source file
+python_bindings/Solver_bindings.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/Solver_bindings.cpp.i
+.PHONY : python_bindings/Solver_bindings.cpp.i
+
+python_bindings/Solver_bindings.s: python_bindings/Solver_bindings.cpp.s
+.PHONY : python_bindings/Solver_bindings.s
+
+# target to generate assembly for a file
+python_bindings/Solver_bindings.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/Solver_bindings.cpp.s
+.PHONY : python_bindings/Solver_bindings.cpp.s
+
 python_bindings/bindings.o: python_bindings/bindings.cpp.o
 .PHONY : python_bindings/bindings.o
 
@@ -177,29 +225,53 @@ python_bindings/bindings.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/python_bindings/bindings.cpp.s
 .PHONY : python_bindings/bindings.cpp.s
 
-src/ElemNod.o: src/ElemNod.cpp.o
-.PHONY : src/ElemNod.o
+src/Element.o: src/Element.cpp.o
+.PHONY : src/Element.o
 
 # target to build an object file
-src/ElemNod.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/ElemNod.cpp.o
-.PHONY : src/ElemNod.cpp.o
+src/Element.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/Element.cpp.o
+.PHONY : src/Element.cpp.o
 
-src/ElemNod.i: src/ElemNod.cpp.i
-.PHONY : src/ElemNod.i
+src/Element.i: src/Element.cpp.i
+.PHONY : src/Element.i
 
 # target to preprocess a source file
-src/ElemNod.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/ElemNod.cpp.i
-.PHONY : src/ElemNod.cpp.i
+src/Element.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/Element.cpp.i
+.PHONY : src/Element.cpp.i
 
-src/ElemNod.s: src/ElemNod.cpp.s
-.PHONY : src/ElemNod.s
+src/Element.s: src/Element.cpp.s
+.PHONY : src/Element.s
 
 # target to generate assembly for a file
-src/ElemNod.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/ElemNod.cpp.s
-.PHONY : src/ElemNod.cpp.s
+src/Element.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/Element.cpp.s
+.PHONY : src/Element.cpp.s
+
+src/Node.o: src/Node.cpp.o
+.PHONY : src/Node.o
+
+# target to build an object file
+src/Node.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/Node.cpp.o
+.PHONY : src/Node.cpp.o
+
+src/Node.i: src/Node.cpp.i
+.PHONY : src/Node.i
+
+# target to preprocess a source file
+src/Node.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/Node.cpp.i
+.PHONY : src/Node.cpp.i
+
+src/Node.s: src/Node.cpp.s
+.PHONY : src/Node.s
+
+# target to generate assembly for a file
+src/Node.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_module.dir/build.make CMakeFiles/my_module.dir/src/Node.cpp.s
+.PHONY : src/Node.cpp.s
 
 src/Solver.o: src/Solver.cpp.o
 .PHONY : src/Solver.o
@@ -237,12 +309,21 @@ help:
 	@echo "... python_bindings/Element_bindings.o"
 	@echo "... python_bindings/Element_bindings.i"
 	@echo "... python_bindings/Element_bindings.s"
+	@echo "... python_bindings/Node_bindings.o"
+	@echo "... python_bindings/Node_bindings.i"
+	@echo "... python_bindings/Node_bindings.s"
+	@echo "... python_bindings/Solver_bindings.o"
+	@echo "... python_bindings/Solver_bindings.i"
+	@echo "... python_bindings/Solver_bindings.s"
 	@echo "... python_bindings/bindings.o"
 	@echo "... python_bindings/bindings.i"
 	@echo "... python_bindings/bindings.s"
-	@echo "... src/ElemNod.o"
-	@echo "... src/ElemNod.i"
-	@echo "... src/ElemNod.s"
+	@echo "... src/Element.o"
+	@echo "... src/Element.i"
+	@echo "... src/Element.s"
+	@echo "... src/Node.o"
+	@echo "... src/Node.i"
+	@echo "... src/Node.s"
 	@echo "... src/Solver.o"
 	@echo "... src/Solver.i"
 	@echo "... src/Solver.s"
