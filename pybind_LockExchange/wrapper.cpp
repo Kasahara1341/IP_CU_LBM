@@ -43,6 +43,8 @@ public:
 // CUDAカーネル呼び出し（kernel.cu で定義）
 extern void launch_add_one(float* d_data, int N);
 
+void cumallcpy()
+
 void compute_on_gpu(GPUMemory& mem) {
     launch_add_one(mem.data(), mem.size());
 }
